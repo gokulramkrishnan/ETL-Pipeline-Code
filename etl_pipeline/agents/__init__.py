@@ -7,6 +7,7 @@ from .agent_dbt_generator import run_agent4_dbt_generator
 from .agent_profiler import run_agent5_profiler
 from .agent_reconciliation import run_agent6_reconciliation
 from .agent_data_quality import run_agent7_data_quality
+from .agent_mermaid_er import run_agent8_mermaid_er
 
 __all__ = [
     "run_agent1_reverse_engineer",
@@ -16,4 +17,5 @@ __all__ = [
     "run_agent5_profiler",
     "run_agent6_reconciliation",
     "run_agent7_data_quality",
+    "run_agent8_mermaid_er",
 ]

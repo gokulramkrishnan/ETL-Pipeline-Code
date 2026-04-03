@@ -126,6 +126,102 @@ dbt test          # runs all DQ rules
 - [Data Vault 2.0 on Databricks/Snowflake](https://techcommunity.microsoft.com/blog/analyticsazure/data-vault-2-0-using-databricks-lakehouse-architecture-on-azure/3797493)
 - [dbt Documentation](https://docs.getdbt.com)
 
+
+
+Agent 8 — Mermaid ER + FIBO/BIAN Alignment
+What it does
+Agent 8 converts the Data Vault model produced by Agent 3 into Mermaid ER and class diagrams and annotates every entity with its corresponding FIBO ontology class and BIAN Service Domain.
+Output files (output/mermaid/)
+FileDescriptionsource_er.mmdER diagram of original source tables with PK/FK markersstaging_er.mmdER diagram of STG layer tablesdata_vault_er.mmdFull Data Vault 2.0 ER — Hubs, Links, Satellites with cardinalityfibo_bian_class.mmdClass diagram annotating each Hub/Sat with FIBO class + BIAN Service Domainfibo_bian_alignment.jsonMachine-readable alignment tableREADME_diagrams.mdMarkdown file embedding all diagrams — renders natively on GitHub
+
+Reference Models Used
+FIBO — Financial Industry Business Ontology
+
+Maintained by: EDM Council / standardized by OMG
+Spec: spec.edmcouncil.org/fibo
+FIB-DM (data model layer): fib-dm.com — 2,436 classes across 7 domains
+FIBO domains mapped in this pipeline:
+
+FIBO ModuleDomainExample EntitiesFNDFoundationsParty, Currency, Address, Date, AmountBEBusiness EntitiesLegalPerson (Customer), OrganizationFBCFinancial Business & CommerceAccount, Product, Payment, TransactionSECSecuritiesSecurity, InstrumentPriceLOANLoansLoan
+BIAN — Banking Industry Architecture Network
+
+Website: bian.org — not-for-profit, established 2008
+Version: v13 (current as of 2024)
+Scope: 326 Service Domains | 250+ APIs | 5,000+ service operations
+BIAN domains mapped in this pipeline:
+
+BIAN Business AreaService Domains CoveredSales & ServiceCustomer Relationship Management, Sales Order, Customer AgreementOperations & ExecutionCurrent Account, Payment Execution, Securities Position KeepingProductsProduct Directory, Consumer Loan, Investment Portfolio ManagementBusiness SupportParty Reference Data Management, Financial Accounting, Human ResourcesRisk & ComplianceCredit Risk Operations
+
+Usage
+As part of the pipeline (in main_pipeline.ipynb)
+pythonfrom agents.agent_mermaid_er import run_agent8_mermaid_er
+
+MERMAID_RESULT = run_agent8_mermaid_er(
+    mappings   = MAPPINGS,    # from Agent 1
+    dv_model   = DV_MODEL,    # from Agent 3
+    output_dir = OUTPUT_DIR,
+)
+Standalone
+bashcd etl_pipeline
+python agents/agent_mermaid_er.py
+Render diagrams
+bash# Install Mermaid CLI
+npm install -g @mermaid-js/mermaid-cli
+
+# Export to PNG
+mmdc -i output/mermaid/data_vault_er.mmd -o output/mermaid/data_vault_er.png
+mmdc -i output/mermaid/fibo_bian_class.mmd -o output/mermaid/fibo_bian_class.png
+
+# Or open output/mermaid/README_diagrams.md on GitHub — renders natively
+Online rendering
+Paste any .mmd file content at mermaid.live
+
+Example: Data Vault ER (snippet)
+mermaiderDiagram
+    HUB_CUSTOMER {
+        string HK_CUSTOMER PK
+        string CUSTOMER_ID
+        datetime LOAD_DATE
+        string RECORD_SOURCE
+    }
+    HUB_ORDER {
+        string HK_ORDER PK
+        string ORDER_ID
+        datetime LOAD_DATE
+        string RECORD_SOURCE
+    }
+    LNK_CUSTOMER_ORDER {
+        string HK_LNK_CUSTOMER_ORDER PK
+        string HK_CUSTOMER FK
+        string HK_ORDER FK
+        datetime LOAD_DATE
+        string RECORD_SOURCE
+    }
+    SAT_CUSTOMER {
+        string HK_CUSTOMER FK
+        string HD_CUSTOMER
+        string CUSTOMER_NAME
+        string EMAIL
+        datetime LOAD_DATE
+        string RECORD_SOURCE
+    }
+    HUB_CUSTOMER ||--o{ SAT_CUSTOMER : "describes"
+    HUB_CUSTOMER ||--o{ LNK_CUSTOMER_ORDER : "links"
+    HUB_ORDER ||--o{ LNK_CUSTOMER_ORDER : "links"
+Example: FIBO + BIAN Alignment (snippet)
+mermaidclassDiagram
+    class HUB_CUSTOMER {
+        +string HK_CUSTOMER PK
+        +string CUSTOMER_ID
+        <<FIBO: LegalPerson>>
+        <<BIAN: Customer Relationship Management>>
+    }
+    class SAT_CUSTOMER {
+        +string HK_CUSTOMER FK
+        +string HD_CUSTOMER
+        <<FIBO: LegalPersonAttributes>>
+    }
+    HUB_CUSTOMER <|-- SAT_CUSTOMER : describes
 ---
 
 ## 📄 License
