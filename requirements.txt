@@ -1,0 +1,37 @@
+# Core data engineering
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
+lxml>=4.9.0
+pyyaml>=6.0
+jinja2>=3.1.0
+rich>=13.0.0
+
+# ydata-profiling
+ydata-profiling>=4.6.0
+
+# PII detection & anonymization
+presidio-analyzer>=2.2.0
+presidio-anonymizer>=2.2.0
+spacy>=3.7.0
+# Run after install: python -m spacy download en_core_web_lg
+
+# Encryption
+cryptography>=41.0.0
+
+# Synthetic data
+faker>=20.0.0
+
+# Snowflake
+snowflake-connector-python>=3.5.0
+snowflake-sqlalchemy>=1.5.0
+
+# SQL Server (for PII metadata notebooks)
+pyodbc>=5.0.0
+sqlalchemy>=2.0.0
+
+# Data quality
+great-expectations>=0.18.0
+dbt-core>=1.7.0
+dbt-snowflake>=1.7.0

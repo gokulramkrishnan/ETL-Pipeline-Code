@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.env
+.venv
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# dbt
+target/
+dbt_packages/
+logs/
+.user.yml
+
+# Secrets / credentials
+profiles.yml
+.env
+*.key
+*.pem
+secrets.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Output (generated at runtime — not committed)
+etl_pipeline/output/
+dv_pipeline_output/

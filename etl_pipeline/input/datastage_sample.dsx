@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DSExport>
+  <Job Identifier="JOB_CUSTOMER_LOAD" Description="Customer dimension load">
+    <Stage Identifier="SRC_CUSTOMER" StageType="SequentialFile">
+      <Properties>
+        <Property Name="TableName" Value="SRC_CUSTOMER"/>
+      </Properties>
+      <Column Identifier="CUSTOMER_ID"  SqlType="INTEGER"      Nullable="N" Derivation="CUSTOMER_ID"/>
+      <Column Identifier="FIRST_NAME"   SqlType="VARCHAR(100)" Nullable="Y" Derivation="FIRST_NAME"/>
+      <Column Identifier="LAST_NAME"    SqlType="VARCHAR(100)" Nullable="Y" Derivation="LAST_NAME"/>
+      <Column Identifier="EMAIL"         SqlType="VARCHAR(255)" Nullable="Y" Derivation="EMAIL"/>
+      <Column Identifier="PHONE"         SqlType="VARCHAR(20)"  Nullable="Y" Derivation="PHONE"/>
+      <Column Identifier="COUNTRY_CODE" SqlType="CHAR(2)"      Nullable="Y" Derivation="COUNTRY_CODE"/>
+      <Column Identifier="CREATED_DATE" SqlType="DATE"         Nullable="N" Derivation="CREATED_DATE"/>
+    </Stage>
+
+    <Stage Identifier="SRC_ORDER" StageType="OdbcConnector">
+      <Properties>
+        <Property Name="TableName" Value="SRC_ORDER"/>
+      </Properties>
+      <Column Identifier="ORDER_ID"      SqlType="INTEGER"       Nullable="N" Derivation="ORDER_ID"/>
+      <Column Identifier="CUSTOMER_ID"   SqlType="INTEGER"       Nullable="N" Derivation="CUSTOMER_ID"/>
+      <Column Identifier="PRODUCT_ID"    SqlType="INTEGER"       Nullable="N" Derivation="PRODUCT_ID"/>
+      <Column Identifier="ORDER_DATE"    SqlType="DATE"          Nullable="N" Derivation="ORDER_DATE"/>
+      <Column Identifier="ORDER_AMOUNT"  SqlType="DECIMAL(18,2)" Nullable="Y" Derivation="ORDER_AMOUNT"/>
+      <Column Identifier="STATUS"        SqlType="VARCHAR(50)"   Nullable="Y" Derivation="STATUS"/>
+    </Stage>
+
+    <Stage Identifier="EXPR_TRANSFORMATIONS" StageType="Transformer">
+      <Clause Value="FULL_NAME = TRIM(FIRST_NAME || ' ' || LAST_NAME)"/>
+      <Clause Value="CUSTOMER_HK = MD5(CAST(CUSTOMER_ID AS VARCHAR))"/>
+      <Clause Value="EMAIL = LOWER(EMAIL)"/>
+    </Stage>
+
+    <Stage Identifier="TGT_DIM_CUSTOMER" StageType="SequentialFile">
+      <Properties>
+        <Property Name="TableName" Value="TGT_DIM_CUSTOMER"/>
+      </Properties>
+      <Column Identifier="CUSTOMER_HK"   SqlType="VARCHAR(32)"  Nullable="N"/>
+      <Column Identifier="CUSTOMER_BK"   SqlType="INTEGER"      Nullable="N"/>
+      <Column Identifier="FULL_NAME"      SqlType="VARCHAR(200)" Nullable="Y"/>
+      <Column Identifier="EMAIL"          SqlType="VARCHAR(255)" Nullable="Y"/>
+      <Column Identifier="COUNTRY_CODE"  SqlType="CHAR(2)"      Nullable="Y"/>
+      <Column Identifier="LOAD_DATE"      SqlType="TIMESTAMP"    Nullable="N"/>
+      <Column Identifier="RECORD_SOURCE" SqlType="VARCHAR(100)" Nullable="N"/>
+    </Stage>
+
+    <Link SourceStage="SRC_CUSTOMER" TargetStage="EXPR_TRANSFORMATIONS">
+      <Column Identifier="CUSTOMER_ID"  SqlType="INTEGER"/>
+      <Column Identifier="FIRST_NAME"   SqlType="VARCHAR(100)"/>
+      <Column Identifier="LAST_NAME"    SqlType="VARCHAR(100)"/>
+      <Column Identifier="EMAIL"         SqlType="VARCHAR(255)"/>
+      <Column Identifier="PHONE"         SqlType="VARCHAR(20)"/>
+      <Column Identifier="COUNTRY_CODE" SqlType="CHAR(2)"/>
+      <Column Identifier="CREATED_DATE" SqlType="DATE"/>
+    </Link>
+
+    <Link SourceStage="EXPR_TRANSFORMATIONS" TargetStage="TGT_DIM_CUSTOMER">
+      <Column Identifier="CUSTOMER_HK"  SqlType="VARCHAR(32)"  Derivation="MD5(CAST(CUSTOMER_ID AS VARCHAR))"/>
+      <Column Identifier="CUSTOMER_BK"  SqlType="INTEGER"      Derivation="CUSTOMER_ID"/>
+      <Column Identifier="FULL_NAME"     SqlType="VARCHAR(200)" Derivation="TRIM(FIRST_NAME||' '||LAST_NAME)"/>
+      <Column Identifier="EMAIL"         SqlType="VARCHAR(255)" Derivation="LOWER(EMAIL)"/>
+    </Link>
+  </Job>
+</DSExport>
