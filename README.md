@@ -172,56 +172,6 @@ npm install -g @mermaid-js/mermaid-cli
 mmdc -i output/mermaid/data_vault_er.mmd -o output/mermaid/data_vault_er.png
 mmdc -i output/mermaid/fibo_bian_class.mmd -o output/mermaid/fibo_bian_class.png
 
-# Or open output/mermaid/README_diagrams.md on GitHub — renders natively
-Online rendering
-Paste any .mmd file content at mermaid.live
-
-Example: Data Vault ER (snippet)
-mermaiderDiagram
-    HUB_CUSTOMER {
-        string HK_CUSTOMER PK
-        string CUSTOMER_ID
-        datetime LOAD_DATE
-        string RECORD_SOURCE
-    }
-    HUB_ORDER {
-        string HK_ORDER PK
-        string ORDER_ID
-        datetime LOAD_DATE
-        string RECORD_SOURCE
-    }
-    LNK_CUSTOMER_ORDER {
-        string HK_LNK_CUSTOMER_ORDER PK
-        string HK_CUSTOMER FK
-        string HK_ORDER FK
-        datetime LOAD_DATE
-        string RECORD_SOURCE
-    }
-    SAT_CUSTOMER {
-        string HK_CUSTOMER FK
-        string HD_CUSTOMER
-        string CUSTOMER_NAME
-        string EMAIL
-        datetime LOAD_DATE
-        string RECORD_SOURCE
-    }
-    HUB_CUSTOMER ||--o{ SAT_CUSTOMER : "describes"
-    HUB_CUSTOMER ||--o{ LNK_CUSTOMER_ORDER : "links"
-    HUB_ORDER ||--o{ LNK_CUSTOMER_ORDER : "links"
-Example: FIBO + BIAN Alignment (snippet)
-mermaidclassDiagram
-    class HUB_CUSTOMER {
-        +string HK_CUSTOMER PK
-        +string CUSTOMER_ID
-        <<FIBO: LegalPerson>>
-        <<BIAN: Customer Relationship Management>>
-    }
-    class SAT_CUSTOMER {
-        +string HK_CUSTOMER FK
-        +string HD_CUSTOMER
-        <<FIBO: LegalPersonAttributes>>
-    }
-    HUB_CUSTOMER <|-- SAT_CUSTOMER : describes
 ---
 
 ## 📄 License
