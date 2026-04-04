@@ -1,0 +1,448 @@
+{
+  "hash_algorithm": "MD5",
+  "load_date_col": "LOAD_DATE",
+  "record_source": "ETL_PIPELINE",
+  "hubs": [
+    {
+      "hub_name": "HUB_CUSTOMER",
+      "entity": "CUSTOMER",
+      "source_table": "SRC_CUSTOMER",
+      "hash_key": "CUSTOMER_HK",
+      "business_keys": [
+        "CUSTOMER_ID"
+      ],
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "CUSTOMER_HK",
+        "src_bk": [
+          "CUSTOMER_ID"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": "stg_src_customer"
+      }
+    },
+    {
+      "hub_name": "HUB_ORDER",
+      "entity": "ORDER",
+      "source_table": "SRC_ORDER",
+      "hash_key": "ORDER_HK",
+      "business_keys": [
+        "ORDER_ID",
+        "CUSTOMER_ID",
+        "PRODUCT_ID"
+      ],
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "ORDER_HK",
+        "src_bk": [
+          "ORDER_ID",
+          "CUSTOMER_ID",
+          "PRODUCT_ID"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": "stg_src_order"
+      }
+    },
+    {
+      "hub_name": "HUB_DIM_CUSTOMER",
+      "entity": "DIM_CUSTOMER",
+      "source_table": "TGT_DIM_CUSTOMER",
+      "hash_key": "DIM_CUSTOMER_HK",
+      "business_keys": [
+        "COUNTRY_CODE"
+      ],
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "DIM_CUSTOMER_HK",
+        "src_bk": [
+          "COUNTRY_CODE"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": "stg_tgt_dim_customer"
+      }
+    },
+    {
+      "hub_name": "HUB_PRODUCT",
+      "entity": "PRODUCT",
+      "source_table": "SRC_PRODUCT",
+      "hash_key": "PRODUCT_HK",
+      "business_keys": [
+        "PRODUCT_ID"
+      ],
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "PRODUCT_HK",
+        "src_bk": [
+          "PRODUCT_ID"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": "stg_src_product"
+      }
+    }
+  ],
+  "links": [
+    {
+      "link_name": "LNK_CUSTOMER_ORDER",
+      "entity_a": "CUSTOMER",
+      "entity_b": "ORDER",
+      "hash_key": "LNK_CUSTOMER_ORDER_HK",
+      "hub_a_hk": "CUSTOMER_HK",
+      "hub_b_hk": "ORDER_HK",
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "LNK_CUSTOMER_ORDER_HK",
+        "src_fk": [
+          "CUSTOMER_HK",
+          "ORDER_HK"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": [
+          "stg_src_customer",
+          "stg_src_order"
+        ]
+      }
+    },
+    {
+      "link_name": "LNK_ORDER_PRODUCT",
+      "entity_a": "ORDER",
+      "entity_b": "PRODUCT",
+      "hash_key": "LNK_ORDER_PRODUCT_HK",
+      "hub_a_hk": "ORDER_HK",
+      "hub_b_hk": "PRODUCT_HK",
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "LNK_ORDER_PRODUCT_HK",
+        "src_fk": [
+          "ORDER_HK",
+          "PRODUCT_HK"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": [
+          "stg_src_order",
+          "stg_src_product"
+        ]
+      }
+    }
+  ],
+  "satellites": [
+    {
+      "sat_name": "SAT_CUSTOMER_CUSTOMER",
+      "entity": "CUSTOMER",
+      "source_table": "SRC_CUSTOMER",
+      "hub_hash_key": "CUSTOMER_HK",
+      "hashdiff": "CUSTOMER_CUSTOMER_HASHDIFF",
+      "attributes": [
+        {
+          "name": "FIRST_NAME",
+          "data_type": "VARCHAR(100)",
+          "nullable": "Y",
+          "pii": true
+        },
+        {
+          "name": "LAST_NAME",
+          "data_type": "VARCHAR(100)",
+          "nullable": "Y",
+          "pii": true
+        },
+        {
+          "name": "EMAIL",
+          "data_type": "VARCHAR(255)",
+          "nullable": "Y",
+          "pii": true
+        },
+        {
+          "name": "PHONE",
+          "data_type": "VARCHAR(20)",
+          "nullable": "Y",
+          "pii": true
+        },
+        {
+          "name": "COUNTRY_CODE",
+          "data_type": "CHAR(2)",
+          "nullable": "Y",
+          "pii": false
+        },
+        {
+          "name": "CREATED_DATE",
+          "data_type": "DATE",
+          "nullable": "N",
+          "pii": false
+        }
+      ],
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "CUSTOMER_HK",
+        "src_hashdiff": {
+          "is_hashdiff": true,
+          "columns": [
+            "FIRST_NAME",
+            "LAST_NAME",
+            "EMAIL",
+            "PHONE",
+            "COUNTRY_CODE",
+            "CREATED_DATE"
+          ]
+        },
+        "src_payload": [
+          "FIRST_NAME",
+          "LAST_NAME",
+          "EMAIL",
+          "PHONE",
+          "COUNTRY_CODE",
+          "CREATED_DATE"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": "stg_src_customer"
+      }
+    },
+    {
+      "sat_name": "SAT_ORDER_ORDER",
+      "entity": "ORDER",
+      "source_table": "SRC_ORDER",
+      "hub_hash_key": "ORDER_HK",
+      "hashdiff": "ORDER_ORDER_HASHDIFF",
+      "attributes": [
+        {
+          "name": "ORDER_DATE",
+          "data_type": "DATE",
+          "nullable": "N",
+          "pii": false
+        },
+        {
+          "name": "ORDER_AMOUNT",
+          "data_type": "DECIMAL(18,2)",
+          "nullable": "Y",
+          "pii": false
+        },
+        {
+          "name": "STATUS",
+          "data_type": "VARCHAR(50)",
+          "nullable": "Y",
+          "pii": false
+        }
+      ],
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "ORDER_HK",
+        "src_hashdiff": {
+          "is_hashdiff": true,
+          "columns": [
+            "ORDER_DATE",
+            "ORDER_AMOUNT",
+            "STATUS"
+          ]
+        },
+        "src_payload": [
+          "ORDER_DATE",
+          "ORDER_AMOUNT",
+          "STATUS"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": "stg_src_order"
+      }
+    },
+    {
+      "sat_name": "SAT_DIM_CUSTOMER_TGT_DIM_CUSTOMER",
+      "entity": "DIM_CUSTOMER",
+      "source_table": "TGT_DIM_CUSTOMER",
+      "hub_hash_key": "DIM_CUSTOMER_HK",
+      "hashdiff": "DIM_CUSTOMER_TGT_DIM_CUSTOMER_HASHDIFF",
+      "attributes": [
+        {
+          "name": "CUSTOMER_HK",
+          "data_type": "VARCHAR(32)",
+          "nullable": "N",
+          "pii": false
+        },
+        {
+          "name": "CUSTOMER_BK",
+          "data_type": "INTEGER",
+          "nullable": "N",
+          "pii": false
+        },
+        {
+          "name": "FULL_NAME",
+          "data_type": "VARCHAR(200)",
+          "nullable": "Y",
+          "pii": true
+        },
+        {
+          "name": "EMAIL",
+          "data_type": "VARCHAR(255)",
+          "nullable": "Y",
+          "pii": true
+        }
+      ],
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "DIM_CUSTOMER_HK",
+        "src_hashdiff": {
+          "is_hashdiff": true,
+          "columns": [
+            "CUSTOMER_HK",
+            "CUSTOMER_BK",
+            "FULL_NAME",
+            "EMAIL"
+          ]
+        },
+        "src_payload": [
+          "CUSTOMER_HK",
+          "CUSTOMER_BK",
+          "FULL_NAME",
+          "EMAIL"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": "stg_tgt_dim_customer"
+      }
+    },
+    {
+      "sat_name": "SAT_PRODUCT_PRODUCT",
+      "entity": "PRODUCT",
+      "source_table": "SRC_PRODUCT",
+      "hub_hash_key": "PRODUCT_HK",
+      "hashdiff": "PRODUCT_PRODUCT_HASHDIFF",
+      "attributes": [
+        {
+          "name": "PRODUCT_NAME",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "pii": true
+        },
+        {
+          "name": "CATEGORY",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "pii": false
+        },
+        {
+          "name": "UNIT_PRICE",
+          "data_type": "number",
+          "nullable": "NOT NULL",
+          "pii": false
+        },
+        {
+          "name": "IS_ACTIVE",
+          "data_type": "number",
+          "nullable": "NOT NULL",
+          "pii": false
+        }
+      ],
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "PRODUCT_HK",
+        "src_hashdiff": {
+          "is_hashdiff": true,
+          "columns": [
+            "PRODUCT_NAME",
+            "CATEGORY",
+            "UNIT_PRICE",
+            "IS_ACTIVE"
+          ]
+        },
+        "src_payload": [
+          "PRODUCT_NAME",
+          "CATEGORY",
+          "UNIT_PRICE",
+          "IS_ACTIVE"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": "stg_src_product"
+      }
+    },
+    {
+      "sat_name": "SAT_CUSTOMER_CUSTOMER",
+      "entity": "CUSTOMER",
+      "source_table": "SRC_CUSTOMER",
+      "hub_hash_key": "CUSTOMER_HK",
+      "hashdiff": "CUSTOMER_CUSTOMER_HASHDIFF",
+      "attributes": [
+        {
+          "name": "FIRST_NAME",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "pii": true
+        },
+        {
+          "name": "LAST_NAME",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "pii": true
+        },
+        {
+          "name": "EMAIL",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "pii": true
+        },
+        {
+          "name": "PHONE",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "pii": true
+        },
+        {
+          "name": "CREATED_DATE",
+          "data_type": "date",
+          "nullable": "NOT NULL",
+          "pii": false
+        }
+      ],
+      "ldts": "LOAD_DATE",
+      "rsrc": "RECORD_SOURCE",
+      "hash_algorithm": "MD5",
+      "dv4dbt": {
+        "src_pk": "CUSTOMER_HK",
+        "src_hashdiff": {
+          "is_hashdiff": true,
+          "columns": [
+            "FIRST_NAME",
+            "LAST_NAME",
+            "EMAIL",
+            "PHONE",
+            "CREATED_DATE"
+          ]
+        },
+        "src_payload": [
+          "FIRST_NAME",
+          "LAST_NAME",
+          "EMAIL",
+          "PHONE",
+          "CREATED_DATE"
+        ],
+        "src_ldts": "LOAD_DATE",
+        "src_source": "RECORD_SOURCE",
+        "source_model": "stg_src_customer"
+      }
+    }
+  ]
+}

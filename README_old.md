@@ -856,4 +856,4 @@ great-expectations>=0.18.0
 
 MIT License — © gokulram.krishnan
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software to deal in the software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software. Suggest individual users of the concepts and logics from this repository to check the details of the license before commercializing the implementation as needed.

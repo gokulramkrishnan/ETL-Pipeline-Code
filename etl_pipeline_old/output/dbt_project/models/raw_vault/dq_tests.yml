@@ -1,0 +1,117 @@
+version: 2
+models:
+- name: src_customer
+  columns:
+  - name: CUSTOMER_ID
+    tests:
+    - not_null
+    - unique
+  - name: CREATED_DATE
+    tests:
+    - not_null
+    - dbt_utils.expression_is_true:
+        expression: CREATED_DATE >= '1900-01-01' AND CREATED_DATE <= CURRENT_DATE()
+    - dbt_utils.expression_is_true:
+        expression: CREATED_DATE >= '1900-01-01' AND CREATED_DATE <= CURRENT_DATE()
+  - name: EMAIL
+    tests:
+    - dbt_utils.expression_is_true:
+        expression: EMAIL RLIKE '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    - dbt_utils.expression_is_true:
+        expression: EMAIL RLIKE '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    - not_null
+  - name: FIRST_NAME
+    tests:
+    - not_null
+  - name: LAST_NAME
+    tests:
+    - not_null
+  - name: PHONE
+    tests:
+    - not_null
+- name: src_order
+  columns:
+  - name: ORDER_ID
+    tests:
+    - not_null
+    - unique
+  - name: CUSTOMER_ID
+    tests:
+    - not_null
+    - unique
+  - name: PRODUCT_ID
+    tests:
+    - not_null
+    - unique
+  - name: ORDER_DATE
+    tests:
+    - not_null
+    - dbt_utils.expression_is_true:
+        expression: ORDER_DATE >= '1900-01-01' AND ORDER_DATE <= CURRENT_DATE()
+  - name: ORDER_AMOUNT
+    tests:
+    - dbt_utils.expression_is_true:
+        expression: NVL(ORDER_AMOUNT, 0) >= 0
+- name: tgt_dim_customer
+  columns:
+  - name: CUSTOMER_HK
+    tests:
+    - not_null
+  - name: CUSTOMER_BK
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+    - dbt_utils.expression_is_true:
+        expression: LOAD_DATE >= '1900-01-01' AND LOAD_DATE <= CURRENT_DATE()
+  - name: RECORD_SOURCE
+    tests:
+    - not_null
+  - name: COUNTRY_CODE
+    tests:
+    - unique
+  - name: EMAIL
+    tests:
+    - dbt_utils.expression_is_true:
+        expression: EMAIL RLIKE '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    - not_null
+  - name: FULL_NAME
+    tests:
+    - not_null
+- name: hub_customer
+  columns:
+  - name: CUSTOMER_HK
+    tests:
+    - unique
+- name: hub_order
+  columns:
+  - name: ORDER_HK
+    tests:
+    - unique
+- name: hub_dim_customer
+  columns:
+  - name: DIM_CUSTOMER_HK
+    tests:
+    - unique
+- name: src_product
+  columns:
+  - name: PRODUCT_ID
+    tests:
+    - unique
+  - name: PRODUCT_NAME
+    tests:
+    - not_null
+- name: hub_product
+  columns:
+  - name: PRODUCT_HK
+    tests:
+    - unique
+- name: expr_transformations
+  columns:
+  - name: FULL_NAME
+    tests:
+    - not_null
+  - name: EMAIL
+    tests:
+    - not_null

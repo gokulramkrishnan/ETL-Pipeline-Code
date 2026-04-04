@@ -1,0 +1,27 @@
+version: 2
+sources:
+- name: src_customer_src
+  database: SOURCE_DB
+  schema: OPERATIONAL
+  tables:
+  - name: SRC_CUSTOMER
+- name: src_order_src
+  database: SOURCE_DB
+  schema: OPERATIONAL
+  tables:
+  - name: SRC_ORDER
+- name: tgt_dim_customer_src
+  database: SOURCE_DB
+  schema: OPERATIONAL
+  tables:
+  - name: TGT_DIM_CUSTOMER
+- name: src_product_src
+  database: SOURCE_DB
+  schema: OPERATIONAL
+  tables:
+  - name: SRC_PRODUCT
+- name: src_customer_src
+  database: SOURCE_DB
+  schema: OPERATIONAL
+  tables:
+  - name: SRC_CUSTOMER

@@ -1,3 +1,8 @@
+# =============================================================================
+# Author      : gokulram.krishnan
+# Repository  : https://github.com/gokulramkrishnan/Useful-Jupyter-Notebook
+# Description : """
+# =============================================================================
 """
 Agent 3: Data Vault 2.0 Modeler
 Generates Hub, Link, Satellite definitions aligned to datavault4dbt v1.17.0

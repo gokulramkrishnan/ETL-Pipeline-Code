@@ -1,3 +1,8 @@
+# =============================================================================
+# Author      : gokulram.krishnan
+# Repository  : https://github.com/gokulramkrishnan/Useful-Jupyter-Notebook
+# Description : """
+# =============================================================================
 """
 Agent 1: Reverse Engineer
 Parses DataStage .dsx/.xml and Informatica .xml/.ipc exports

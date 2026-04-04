@@ -1,3 +1,8 @@
+# =============================================================================
+# Author      : gokulram.krishnan
+# Repository  : https://github.com/gokulramkrishnan/Useful-Jupyter-Notebook
+# Description : """
+# =============================================================================
 """
 Agent 7: Data Quality Agent
 Generates DQ rules from metadata + STTM + Data Vault model.

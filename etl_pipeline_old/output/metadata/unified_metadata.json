@@ -1,0 +1,601 @@
+{
+  "sources": [
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "stage_name": "SRC_CUSTOMER",
+      "stage_type": "sequentialfile",
+      "columns": [
+        {
+          "name": "CUSTOMER_ID",
+          "data_type": "INTEGER",
+          "length": "",
+          "nullable": "N",
+          "expression": "CUSTOMER_ID"
+        },
+        {
+          "name": "FIRST_NAME",
+          "data_type": "VARCHAR(100)",
+          "length": "",
+          "nullable": "Y",
+          "expression": "FIRST_NAME"
+        },
+        {
+          "name": "LAST_NAME",
+          "data_type": "VARCHAR(100)",
+          "length": "",
+          "nullable": "Y",
+          "expression": "LAST_NAME"
+        },
+        {
+          "name": "EMAIL",
+          "data_type": "VARCHAR(255)",
+          "length": "",
+          "nullable": "Y",
+          "expression": "EMAIL"
+        },
+        {
+          "name": "PHONE",
+          "data_type": "VARCHAR(20)",
+          "length": "",
+          "nullable": "Y",
+          "expression": "PHONE"
+        },
+        {
+          "name": "COUNTRY_CODE",
+          "data_type": "CHAR(2)",
+          "length": "",
+          "nullable": "Y",
+          "expression": "COUNTRY_CODE"
+        },
+        {
+          "name": "CREATED_DATE",
+          "data_type": "DATE",
+          "length": "",
+          "nullable": "N",
+          "expression": "CREATED_DATE"
+        }
+      ],
+      "table_name": "SRC_CUSTOMER",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "stage_name": "SRC_ORDER",
+      "stage_type": "odbcconnector",
+      "columns": [
+        {
+          "name": "ORDER_ID",
+          "data_type": "INTEGER",
+          "length": "",
+          "nullable": "N",
+          "expression": "ORDER_ID"
+        },
+        {
+          "name": "CUSTOMER_ID",
+          "data_type": "INTEGER",
+          "length": "",
+          "nullable": "N",
+          "expression": "CUSTOMER_ID"
+        },
+        {
+          "name": "PRODUCT_ID",
+          "data_type": "INTEGER",
+          "length": "",
+          "nullable": "N",
+          "expression": "PRODUCT_ID"
+        },
+        {
+          "name": "ORDER_DATE",
+          "data_type": "DATE",
+          "length": "",
+          "nullable": "N",
+          "expression": "ORDER_DATE"
+        },
+        {
+          "name": "ORDER_AMOUNT",
+          "data_type": "DECIMAL(18,2)",
+          "length": "",
+          "nullable": "Y",
+          "expression": "ORDER_AMOUNT"
+        },
+        {
+          "name": "STATUS",
+          "data_type": "VARCHAR(50)",
+          "length": "",
+          "nullable": "Y",
+          "expression": "STATUS"
+        }
+      ],
+      "table_name": "SRC_ORDER",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "stage_name": "TGT_DIM_CUSTOMER",
+      "stage_type": "sequentialfile",
+      "columns": [
+        {
+          "name": "CUSTOMER_HK",
+          "data_type": "VARCHAR(32)",
+          "length": "",
+          "nullable": "N",
+          "expression": ""
+        },
+        {
+          "name": "CUSTOMER_BK",
+          "data_type": "INTEGER",
+          "length": "",
+          "nullable": "N",
+          "expression": ""
+        },
+        {
+          "name": "FULL_NAME",
+          "data_type": "VARCHAR(200)",
+          "length": "",
+          "nullable": "Y",
+          "expression": ""
+        },
+        {
+          "name": "EMAIL",
+          "data_type": "VARCHAR(255)",
+          "length": "",
+          "nullable": "Y",
+          "expression": ""
+        },
+        {
+          "name": "COUNTRY_CODE",
+          "data_type": "CHAR(2)",
+          "length": "",
+          "nullable": "Y",
+          "expression": ""
+        },
+        {
+          "name": "LOAD_DATE",
+          "data_type": "TIMESTAMP",
+          "length": "",
+          "nullable": "N",
+          "expression": ""
+        },
+        {
+          "name": "RECORD_SOURCE",
+          "data_type": "VARCHAR(100)",
+          "length": "",
+          "nullable": "N",
+          "expression": ""
+        }
+      ],
+      "table_name": "TGT_DIM_CUSTOMER",
+      "_tool": "datastage"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "table_name": "SRC_PRODUCT",
+      "schema": "OPERATIONAL",
+      "columns": [
+        {
+          "name": "PRODUCT_ID",
+          "data_type": "number",
+          "nullable": "NOT NULL",
+          "key_type": "PRIMARY KEY"
+        },
+        {
+          "name": "PRODUCT_NAME",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "key_type": "NOT A KEY"
+        },
+        {
+          "name": "CATEGORY",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "key_type": "NOT A KEY"
+        },
+        {
+          "name": "UNIT_PRICE",
+          "data_type": "number",
+          "nullable": "NOT NULL",
+          "key_type": "NOT A KEY"
+        },
+        {
+          "name": "IS_ACTIVE",
+          "data_type": "number",
+          "nullable": "NOT NULL",
+          "key_type": "NOT A KEY"
+        }
+      ],
+      "_tool": "informatica"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "table_name": "SRC_CUSTOMER",
+      "schema": "OPERATIONAL",
+      "columns": [
+        {
+          "name": "CUSTOMER_ID",
+          "data_type": "number",
+          "nullable": "NOT NULL",
+          "key_type": "PRIMARY KEY"
+        },
+        {
+          "name": "FIRST_NAME",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "key_type": "NOT A KEY"
+        },
+        {
+          "name": "LAST_NAME",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "key_type": "NOT A KEY"
+        },
+        {
+          "name": "EMAIL",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "key_type": "NOT A KEY"
+        },
+        {
+          "name": "PHONE",
+          "data_type": "varchar2",
+          "nullable": "NULL",
+          "key_type": "NOT A KEY"
+        },
+        {
+          "name": "CREATED_DATE",
+          "data_type": "date",
+          "nullable": "NOT NULL",
+          "key_type": "NOT A KEY"
+        }
+      ],
+      "_tool": "informatica"
+    }
+  ],
+  "targets": [
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "table_name": "TGT_FACT_ORDER",
+      "schema": "DW",
+      "columns": [
+        {
+          "name": "ORDER_HK",
+          "data_type": "varchar2",
+          "nullable": "NOT NULL",
+          "key_type": "PRIMARY KEY"
+        },
+        {
+          "name": "CUSTOMER_HK",
+          "data_type": "varchar2",
+          "nullable": "NOT NULL",
+          "key_type": "FOREIGN KEY"
+        },
+        {
+          "name": "PRODUCT_HK",
+          "data_type": "varchar2",
+          "nullable": "NOT NULL",
+          "key_type": "FOREIGN KEY"
+        },
+        {
+          "name": "ORDER_DATE",
+          "data_type": "date",
+          "nullable": "NOT NULL",
+          "key_type": "NOT A KEY"
+        },
+        {
+          "name": "ORDER_AMOUNT",
+          "data_type": "number",
+          "nullable": "NULL",
+          "key_type": "NOT A KEY"
+        },
+        {
+          "name": "LOAD_DATE",
+          "data_type": "timestamp",
+          "nullable": "NOT NULL",
+          "key_type": "NOT A KEY"
+        },
+        {
+          "name": "RECORD_SOURCE",
+          "data_type": "varchar2",
+          "nullable": "NOT NULL",
+          "key_type": "NOT A KEY"
+        }
+      ],
+      "_tool": "informatica"
+    }
+  ],
+  "mappings": [
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "SRC_CUSTOMER",
+      "target_stage": "EXPR_TRANSFORMATIONS",
+      "source_column": "CUSTOMER_ID",
+      "target_column": "CUSTOMER_ID",
+      "data_type": "INTEGER",
+      "expression": "",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "SRC_CUSTOMER",
+      "target_stage": "EXPR_TRANSFORMATIONS",
+      "source_column": "FIRST_NAME",
+      "target_column": "FIRST_NAME",
+      "data_type": "VARCHAR(100)",
+      "expression": "",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "SRC_CUSTOMER",
+      "target_stage": "EXPR_TRANSFORMATIONS",
+      "source_column": "LAST_NAME",
+      "target_column": "LAST_NAME",
+      "data_type": "VARCHAR(100)",
+      "expression": "",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "SRC_CUSTOMER",
+      "target_stage": "EXPR_TRANSFORMATIONS",
+      "source_column": "EMAIL",
+      "target_column": "EMAIL",
+      "data_type": "VARCHAR(255)",
+      "expression": "",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "SRC_CUSTOMER",
+      "target_stage": "EXPR_TRANSFORMATIONS",
+      "source_column": "PHONE",
+      "target_column": "PHONE",
+      "data_type": "VARCHAR(20)",
+      "expression": "",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "SRC_CUSTOMER",
+      "target_stage": "EXPR_TRANSFORMATIONS",
+      "source_column": "COUNTRY_CODE",
+      "target_column": "COUNTRY_CODE",
+      "data_type": "CHAR(2)",
+      "expression": "",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "SRC_CUSTOMER",
+      "target_stage": "EXPR_TRANSFORMATIONS",
+      "source_column": "CREATED_DATE",
+      "target_column": "CREATED_DATE",
+      "data_type": "DATE",
+      "expression": "",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "EXPR_TRANSFORMATIONS",
+      "target_stage": "TGT_DIM_CUSTOMER",
+      "source_column": "CUSTOMER_HK",
+      "target_column": "CUSTOMER_HK",
+      "data_type": "VARCHAR(32)",
+      "expression": "MD5(CAST(CUSTOMER_ID AS VARCHAR))",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "EXPR_TRANSFORMATIONS",
+      "target_stage": "TGT_DIM_CUSTOMER",
+      "source_column": "CUSTOMER_BK",
+      "target_column": "CUSTOMER_BK",
+      "data_type": "INTEGER",
+      "expression": "CUSTOMER_ID",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "EXPR_TRANSFORMATIONS",
+      "target_stage": "TGT_DIM_CUSTOMER",
+      "source_column": "FULL_NAME",
+      "target_column": "FULL_NAME",
+      "data_type": "VARCHAR(200)",
+      "expression": "TRIM(FIRST_NAME||' '||LAST_NAME)",
+      "_tool": "datastage"
+    },
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "source_stage": "EXPR_TRANSFORMATIONS",
+      "target_stage": "TGT_DIM_CUSTOMER",
+      "source_column": "EMAIL",
+      "target_column": "EMAIL",
+      "data_type": "VARCHAR(255)",
+      "expression": "LOWER(EMAIL)",
+      "_tool": "datastage"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "from_instance": "SQ_SRC_ORDER",
+      "from_field": "ORDER_ID",
+      "to_instance": "EXP_HASH_KEYS",
+      "to_field": "ORDER_ID",
+      "source_column": "ORDER_ID",
+      "target_column": "ORDER_ID",
+      "expression": "",
+      "_tool": "informatica"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "from_instance": "SQ_SRC_ORDER",
+      "from_field": "CUSTOMER_ID",
+      "to_instance": "EXP_HASH_KEYS",
+      "to_field": "CUSTOMER_ID",
+      "source_column": "CUSTOMER_ID",
+      "target_column": "CUSTOMER_ID",
+      "expression": "",
+      "_tool": "informatica"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "from_instance": "SQ_SRC_ORDER",
+      "from_field": "PRODUCT_ID",
+      "to_instance": "EXP_HASH_KEYS",
+      "to_field": "PRODUCT_ID",
+      "source_column": "PRODUCT_ID",
+      "target_column": "PRODUCT_ID",
+      "expression": "",
+      "_tool": "informatica"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "from_instance": "SQ_SRC_ORDER",
+      "from_field": "ORDER_AMOUNT",
+      "to_instance": "AGG_ORDER_STATS",
+      "to_field": "ORDER_AMOUNT",
+      "source_column": "ORDER_AMOUNT",
+      "target_column": "ORDER_AMOUNT",
+      "expression": "",
+      "_tool": "informatica"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "from_instance": "EXP_HASH_KEYS",
+      "from_field": "ORDER_HK",
+      "to_instance": "TGT_FACT_ORDER",
+      "to_field": "ORDER_HK",
+      "source_column": "ORDER_HK",
+      "target_column": "ORDER_HK",
+      "expression": "",
+      "_tool": "informatica"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "from_instance": "EXP_HASH_KEYS",
+      "from_field": "CUSTOMER_HK",
+      "to_instance": "TGT_FACT_ORDER",
+      "to_field": "CUSTOMER_HK",
+      "source_column": "CUSTOMER_HK",
+      "target_column": "CUSTOMER_HK",
+      "expression": "",
+      "_tool": "informatica"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "from_instance": "EXP_HASH_KEYS",
+      "from_field": "PRODUCT_HK",
+      "to_instance": "TGT_FACT_ORDER",
+      "to_field": "PRODUCT_HK",
+      "source_column": "PRODUCT_HK",
+      "target_column": "PRODUCT_HK",
+      "expression": "",
+      "_tool": "informatica"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "from_instance": "EXP_HASH_KEYS",
+      "from_field": "LOAD_DATE",
+      "to_instance": "TGT_FACT_ORDER",
+      "to_field": "LOAD_DATE",
+      "source_column": "LOAD_DATE",
+      "target_column": "LOAD_DATE",
+      "expression": "",
+      "_tool": "informatica"
+    }
+  ],
+  "transformations": [
+    {
+      "job": "JOB_CUSTOMER_LOAD",
+      "stage_name": "EXPR_TRANSFORMATIONS",
+      "stage_type": "transformer",
+      "columns": [],
+      "expressions": [
+        {
+          "expression": "FULL_NAME = TRIM(FIRST_NAME || ' ' || LAST_NAME)"
+        },
+        {
+          "expression": "CUSTOMER_HK = MD5(CAST(CUSTOMER_ID AS VARCHAR))"
+        },
+        {
+          "expression": "EMAIL = LOWER(EMAIL)"
+        }
+      ],
+      "_tool": "datastage"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "name": "SQ_SRC_ORDER",
+      "type": "source qualifier",
+      "expressions": [
+        {
+          "field": "ORDER_AMOUNT",
+          "expression": "NVL(ORDER_AMOUNT, 0)",
+          "data_type": "number"
+        }
+      ],
+      "_tool": "informatica"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "name": "EXP_HASH_KEYS",
+      "type": "expression",
+      "expressions": [
+        {
+          "field": "ORDER_HK",
+          "expression": "MD5(TO_CHAR(ORDER_ID))",
+          "data_type": "varchar2"
+        },
+        {
+          "field": "CUSTOMER_HK",
+          "expression": "MD5(TO_CHAR(CUSTOMER_ID))",
+          "data_type": "varchar2"
+        },
+        {
+          "field": "PRODUCT_HK",
+          "expression": "MD5(TO_CHAR(PRODUCT_ID))",
+          "data_type": "varchar2"
+        },
+        {
+          "field": "LOAD_DATE",
+          "expression": "SYSDATE",
+          "data_type": "timestamp"
+        },
+        {
+          "field": "RECORD_SOURCE",
+          "expression": "'ETL_PIPELINE'",
+          "data_type": "varchar2"
+        }
+      ],
+      "_tool": "informatica"
+    },
+    {
+      "mapping": "M_ORDER_FACT_LOAD",
+      "name": "AGG_ORDER_STATS",
+      "type": "aggregator",
+      "expressions": [
+        {
+          "field": "TOTAL_AMOUNT",
+          "expression": "SUM(ORDER_AMOUNT)",
+          "data_type": "number"
+        },
+        {
+          "field": "ORDER_COUNT",
+          "expression": "COUNT(ORDER_ID)",
+          "data_type": "number"
+        }
+      ],
+      "_tool": "informatica"
+    }
+  ],
+  "provenance": [
+    {
+      "tool": "datastage",
+      "file": "input/datastage_sample.dsx",
+      "parsed_at": "2026-04-02T19:18:53.464580"
+    },
+    {
+      "tool": "informatica",
+      "file": "input/informatica_sample.xml",
+      "parsed_at": "2026-04-02T19:18:53.465333"
+    }
+  ]
+}

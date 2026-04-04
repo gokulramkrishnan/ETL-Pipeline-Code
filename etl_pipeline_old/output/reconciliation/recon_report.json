@@ -1,0 +1,139 @@
+{
+  "summary": {
+    "total_checks": 10,
+    "passed": 0,
+    "failed": 10,
+    "skipped": 0
+  },
+  "checks": [
+    {
+      "check": "ROW_COUNT",
+      "source_count": 100,
+      "target_count": 95,
+      "difference": 5,
+      "pct_difference": 5.0,
+      "status": "FAIL",
+      "recommendation": "5 rows missing in target. Investigate ETL filter conditions, rejected records log, or truncation."
+    },
+    {
+      "check": "MISSING_KEYS",
+      "key_column": "customer_id",
+      "missing_in_target": 5,
+      "extra_in_target": 0,
+      "sample_missing": [
+        "99",
+        "98",
+        "96",
+        "95",
+        "97"
+      ],
+      "sample_extra": [],
+      "status": "FAIL",
+      "recommendation": "5 keys missing in target \u2014 check for ETL load failures, key generation mismatches. Sample: ['99', '98', '96', '95', '97']. "
+    },
+    {
+      "check": "AGGREGATE_SUM",
+      "column": "revenue",
+      "aggregate": "SUM",
+      "source_value": 5222463.06,
+      "target_value": 4945710.18,
+      "absolute_diff": 276752.88,
+      "pct_diff": 5.299279,
+      "tolerance_pct": 0.001,
+      "status": "FAIL",
+      "recommendation": "SUM(revenue) differs by 5.2993%. Check for NULL handling differences, rounding, or missing rows. Source=5222463.06, Target=4945710.18."
+    },
+    {
+      "check": "AGGREGATE_AVG",
+      "column": "revenue",
+      "aggregate": "AVG",
+      "source_value": 52224.6306,
+      "target_value": 52060.1072,
+      "absolute_diff": 164.5234,
+      "pct_diff": 0.31503,
+      "tolerance_pct": 0.001,
+      "status": "FAIL",
+      "recommendation": "AVG(revenue) differs by 0.315%. Check for NULL handling differences, rounding, or missing rows. Source=52224.63, Target=52060.11."
+    },
+    {
+      "check": "AGGREGATE_COUNT",
+      "column": "revenue",
+      "aggregate": "COUNT",
+      "source_value": 100.0,
+      "target_value": 95.0,
+      "absolute_diff": 5.0,
+      "pct_diff": 5.0,
+      "tolerance_pct": 0.001,
+      "status": "FAIL",
+      "recommendation": "COUNT(revenue) differs by 5.0%. Check for NULL handling differences, rounding, or missing rows. Source=100.0, Target=95.0."
+    },
+    {
+      "check": "AGGREGATE_SUM",
+      "column": "order_count",
+      "aggregate": "SUM",
+      "source_value": 22912.0,
+      "target_value": 21283.0,
+      "absolute_diff": 1629.0,
+      "pct_diff": 7.109811,
+      "tolerance_pct": 0.001,
+      "status": "FAIL",
+      "recommendation": "SUM(order_count) differs by 7.1098%. Check for NULL handling differences, rounding, or missing rows. Source=22912.0, Target=21283.0."
+    },
+    {
+      "check": "AGGREGATE_AVG",
+      "column": "order_count",
+      "aggregate": "AVG",
+      "source_value": 229.12,
+      "target_value": 224.0316,
+      "absolute_diff": 5.0884,
+      "pct_diff": 2.220854,
+      "tolerance_pct": 0.001,
+      "status": "FAIL",
+      "recommendation": "AVG(order_count) differs by 2.2209%. Check for NULL handling differences, rounding, or missing rows. Source=229.12, Target=224.03."
+    },
+    {
+      "check": "AGGREGATE_COUNT",
+      "column": "order_count",
+      "aggregate": "COUNT",
+      "source_value": 100.0,
+      "target_value": 95.0,
+      "absolute_diff": 5.0,
+      "pct_diff": 5.0,
+      "tolerance_pct": 0.001,
+      "status": "FAIL",
+      "recommendation": "COUNT(order_count) differs by 5.0%. Check for NULL handling differences, rounding, or missing rows. Source=100.0, Target=95.0."
+    },
+    {
+      "check": "VALUE_MISMATCH",
+      "columns_checked": [
+        "full_name",
+        "email",
+        "revenue",
+        "order_count"
+      ],
+      "rows_compared": 95,
+      "mismatches_found": 1,
+      "sample_mismatches": [
+        {
+          "key": 5,
+          "column": "revenue",
+          "source": 59090.2,
+          "target": 0.0,
+          "mismatch_type": "VALUE_DIFFERENCE"
+        }
+      ],
+      "status": "FAIL",
+      "recommendation": "1 value mismatch(es) found. Top issue types: {'VALUE_DIFFERENCE': 1}. Review transformation logic for affected columns."
+    },
+    {
+      "check": "HASH_COMPARISON",
+      "rows_compared": 95,
+      "hash_mismatches": 1,
+      "sample_diff_keys": [
+        "5"
+      ],
+      "status": "FAIL",
+      "recommendation": "1 rows have differing hashes. Run VALUE_MISMATCH check on these keys to pinpoint columns."
+    }
+  ]
+}

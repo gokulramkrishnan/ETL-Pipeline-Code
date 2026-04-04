@@ -1,0 +1,168 @@
+version: 2
+models:
+- name: hub_customer
+  description: Hub for CUSTOMER entity
+  columns:
+  - name: CUSTOMER_HK
+    description: Hash key (primary key)
+    tests:
+    - unique
+    - not_null
+  - name: CUSTOMER_ID
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+  - name: RECORD_SOURCE
+    tests:
+    - not_null
+- name: hub_order
+  description: Hub for ORDER entity
+  columns:
+  - name: ORDER_HK
+    description: Hash key (primary key)
+    tests:
+    - unique
+    - not_null
+  - name: ORDER_ID
+    tests:
+    - not_null
+  - name: CUSTOMER_ID
+    tests:
+    - not_null
+  - name: PRODUCT_ID
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+  - name: RECORD_SOURCE
+    tests:
+    - not_null
+- name: hub_dim_customer
+  description: Hub for DIM_CUSTOMER entity
+  columns:
+  - name: DIM_CUSTOMER_HK
+    description: Hash key (primary key)
+    tests:
+    - unique
+    - not_null
+  - name: COUNTRY_CODE
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+  - name: RECORD_SOURCE
+    tests:
+    - not_null
+- name: hub_product
+  description: Hub for PRODUCT entity
+  columns:
+  - name: PRODUCT_HK
+    description: Hash key (primary key)
+    tests:
+    - unique
+    - not_null
+  - name: PRODUCT_ID
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+  - name: RECORD_SOURCE
+    tests:
+    - not_null
+- name: lnk_customer_order
+  description: Link between CUSTOMER and ORDER
+  columns:
+  - name: LNK_CUSTOMER_ORDER_HK
+    tests:
+    - unique
+    - not_null
+  - name: CUSTOMER_HK
+    tests:
+    - not_null
+  - name: ORDER_HK
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+- name: lnk_order_product
+  description: Link between ORDER and PRODUCT
+  columns:
+  - name: LNK_ORDER_PRODUCT_HK
+    tests:
+    - unique
+    - not_null
+  - name: ORDER_HK
+    tests:
+    - not_null
+  - name: PRODUCT_HK
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+- name: sat_customer_customer
+  description: Satellite for CUSTOMER from SRC_CUSTOMER
+  columns:
+  - name: CUSTOMER_HK
+    tests:
+    - not_null
+  - name: CUSTOMER_CUSTOMER_HASHDIFF
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+- name: sat_order_order
+  description: Satellite for ORDER from SRC_ORDER
+  columns:
+  - name: ORDER_HK
+    tests:
+    - not_null
+  - name: ORDER_ORDER_HASHDIFF
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+- name: sat_dim_customer_tgt_dim_customer
+  description: Satellite for DIM_CUSTOMER from TGT_DIM_CUSTOMER
+  columns:
+  - name: DIM_CUSTOMER_HK
+    tests:
+    - not_null
+  - name: DIM_CUSTOMER_TGT_DIM_CUSTOMER_HASHDIFF
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+- name: sat_product_product
+  description: Satellite for PRODUCT from SRC_PRODUCT
+  columns:
+  - name: PRODUCT_HK
+    tests:
+    - not_null
+  - name: PRODUCT_PRODUCT_HASHDIFF
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null
+- name: sat_customer_customer
+  description: Satellite for CUSTOMER from SRC_CUSTOMER
+  columns:
+  - name: CUSTOMER_HK
+    tests:
+    - not_null
+  - name: CUSTOMER_CUSTOMER_HASHDIFF
+    tests:
+    - not_null
+  - name: LOAD_DATE
+    tests:
+    - not_null

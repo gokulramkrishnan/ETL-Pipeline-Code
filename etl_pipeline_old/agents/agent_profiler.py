@@ -1,3 +1,8 @@
+# =============================================================================
+# Author      : gokulram.krishnan
+# Repository  : https://github.com/gokulramkrishnan/Useful-Jupyter-Notebook
+# Description : """
+# =============================================================================
 """
 Agent 5: Data Profiler
 Runs ydata-profiling + Presidio PII detection on source DataFrames.
