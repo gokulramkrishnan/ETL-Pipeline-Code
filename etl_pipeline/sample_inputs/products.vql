@@ -1,0 +1,19 @@
+-- Denodo VQL: Product analytics views
+
+CREATE OR REPLACE BASE VIEW bv_product (
+    PRODUCT_ID     int,
+    PRODUCT_NAME   text,
+    CATEGORY       text,
+    UNIT_PRICE     decimal
+)
+DATASOURCENAME=ds_oracle_erp;
+
+CREATE OR REPLACE VIEW v_product_summary AS
+SELECT PRODUCT_ID, PRODUCT_NAME, CATEGORY, SUM(UNIT_PRICE) AS TOTAL_VALUE
+FROM bv_product
+GROUP BY PRODUCT_ID, PRODUCT_NAME, CATEGORY;
+
+CREATE OR REPLACE VIEW v_active_products AS
+SELECT p.PRODUCT_ID, p.PRODUCT_NAME, p.UNIT_PRICE
+FROM   bv_product p
+WHERE  p.UNIT_PRICE > 0;

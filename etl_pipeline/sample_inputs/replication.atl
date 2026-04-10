@@ -1,0 +1,27 @@
+{
+  "task": {
+    "name": "oracle_to_snowflake",
+    "tableRules": [
+      {
+        "tableName": "CUSTOMER",
+        "schemaName": "SALES",
+        "columns": [
+          {"columnName": "CUST_ID",    "dataType": "INT4",    "isPrimaryKey": true,  "nullable": false},
+          {"columnName": "CUST_NAME",  "dataType": "STRING",  "isPrimaryKey": false, "nullable": true},
+          {"columnName": "EMAIL",      "dataType": "STRING",  "isPrimaryKey": false, "nullable": true},
+          {"columnName": "SEGMENT",    "dataType": "STRING",  "isPrimaryKey": false, "nullable": true}
+        ]
+      },
+      {
+        "tableName": "TRANSACTION",
+        "schemaName": "SALES",
+        "columns": [
+          {"columnName": "TXN_ID",     "dataType": "INT4",    "isPrimaryKey": true,  "nullable": false},
+          {"columnName": "CUST_ID",    "dataType": "INT4",    "isPrimaryKey": false, "nullable": false},
+          {"columnName": "TXN_DATE",   "dataType": "DATE",    "isPrimaryKey": false, "nullable": false},
+          {"columnName": "AMOUNT",     "dataType": "NUMERIC", "isPrimaryKey": false, "nullable": true}
+        ]
+      }
+    ]
+  }
+}

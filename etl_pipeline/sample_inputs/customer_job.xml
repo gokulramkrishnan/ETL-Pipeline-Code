@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DSExport>
+  <Job Identifier="JOB_CUSTOMER_LOAD" Name="JOB_CUSTOMER_LOAD">
+    <Stage StageType="source" Identifier="SRC_CUSTOMER" Name="SRC_CUSTOMER">
+      <Property name="TableName">SRC_CUSTOMER</Property>
+      <Column Identifier="CUSTOMER_ID"  SqlType="INTEGER"      Nullable="false" Derivation="CUSTOMER_ID"/>
+      <Column Identifier="FIRST_NAME"   SqlType="VARCHAR(100)" Nullable="true"  Derivation="FIRST_NAME"/>
+      <Column Identifier="EMAIL"        SqlType="VARCHAR(255)" Nullable="true"  Derivation="LOWER(EMAIL)"/>
+      <Column Identifier="PHONE"        SqlType="VARCHAR(20)"  Nullable="true"  Derivation="PHONE"/>
+      <Column Identifier="CREATED_DATE" SqlType="DATE"         Nullable="false" Derivation="CREATED_DATE"/>
+    </Stage>
+    <Stage StageType="target" Identifier="TGT_DIM_CUSTOMER" Name="TGT_DIM_CUSTOMER">
+      <Property name="TableName">TGT_DIM_CUSTOMER</Property>
+      <Column Identifier="CUSTOMER_HK"   SqlType="VARCHAR(32)"  Nullable="false" Derivation="MD5(CAST(CUSTOMER_ID AS VARCHAR))"/>
+      <Column Identifier="CUSTOMER_BK"   SqlType="INTEGER"      Nullable="false" Derivation="CUSTOMER_ID"/>
+      <Column Identifier="FULL_NAME"     SqlType="VARCHAR(200)" Nullable="true"  Derivation="TRIM(FIRST_NAME)"/>
+      <Column Identifier="EMAIL"         SqlType="VARCHAR(255)" Nullable="true"  Derivation="LOWER(EMAIL)"/>
+      <Column Identifier="LOAD_DATE"     SqlType="TIMESTAMP"    Nullable="false" Derivation="CURRENT_TIMESTAMP"/>
+      <Column Identifier="RECORD_SOURCE" SqlType="VARCHAR(100)" Nullable="false" Derivation="'SRC_CRM'"/>
+    </Stage>
+    <Link SourceStage="SRC_CUSTOMER" TargetStage="TGT_DIM_CUSTOMER">
+      <Column Identifier="CUSTOMER_ID" SqlType="INTEGER"/>
+      <Column Identifier="FIRST_NAME"  SqlType="VARCHAR(100)"/>
+    </Link>
+  </Job>
+</DSExport>

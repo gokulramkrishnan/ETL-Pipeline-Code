@@ -1,0 +1,56 @@
+# =============================================================================
+# requirements_extended.txt
+# Extended Reverse Engineer Agent — Minimal Dependencies
+# Author: gokulram.krishnan
+#
+# Install: pip install -r requirements_extended.txt
+#
+# All packages below have free licenses (MIT, Apache-2.0, BSD).
+# The LLM integrations are OPTIONAL — the pipeline runs fully offline
+# without any API keys.
+# =============================================================================
+
+# ── Core (always required) ────────────────────────────────────────────────────
+# No NumPy, no Pandas for the core parser — stdlib only for speed.
+# These three cover Excel output, path handling, and type hints.
+openpyxl>=3.1.0          # STTM.xlsx generation
+pathlib2>=2.3.7; python_version < "3.4"   # backport for Python < 3.4 only
+
+# ── dbt deployment (optional — only needed to run generated dbt project) ─────
+dbt-core>=1.7.0,<2.0.0
+dbt-snowflake>=1.7.0,<2.0.0
+
+# ── Confidence matrix extras (optional — used by compare_outputs.py) ─────────
+# openpyxl already listed above covers Excel output
+
+# ── Free LLM enrichment (ALL optional) ───────────────────────────────────────
+#
+# Option A: Groq API — free tier, 6k tokens/min on llama3-8b (no install needed)
+#   Just set: export GROQ_API_KEY=gsk_...
+#   The agent uses urllib.request — zero extra packages.
+#
+# Option B: Ollama — fully offline, runs on your laptop
+#   Install from: https://ollama.ai
+#   Then run:  ollama pull llama3
+#   Then set:  export OLLAMA_URL=http://localhost:11434
+#   No Python package needed — the agent calls it via urllib.request.
+#
+# Option C: HuggingFace Inference API (free tier)
+#   pip install huggingface_hub
+#   export HUGGINGFACE_TOKEN=hf_...
+huggingface_hub>=0.20.0  ; extra == "llm"   # optional HF support
+
+# ── VS Code extensions (install in VS Code, not pip) ─────────────────────────
+# Recommended extensions for this project (see .vscode/extensions.json):
+#   ms-python.python
+#   ms-python.vscode-pylance
+#   dbt-labs.dbt-power-user
+#   mechatroner.rainbow-csv
+#   mermaid-js.vscode-mermaid-preview
+#   redhat.vscode-yaml
+#   yzhang.markdown-all-in-one
+
+# ── Development / testing only ────────────────────────────────────────────────
+pytest>=7.4.0            ; extra == "dev"
+black>=23.0.0            ; extra == "dev"
+ruff>=0.1.0              ; extra == "dev"
