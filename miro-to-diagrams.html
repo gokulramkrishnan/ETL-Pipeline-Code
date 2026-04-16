@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Miro → Diagram Converter</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111318;
+    --surface2: #181c22;
+    --border: #252a34;
+    --border2: #2e3440;
+    --accent: #00d4aa;
+    --accent2: #0090ff;
+    --accent3: #ff6b35;
+    --accent4: #a855f7;
+    --text: #e8ecf0;
+    --text2: #8892a0;
+    --text3: #50596a;
+    --success: #22c55e;
+    --error: #ef4444;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 40px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border2);
+  }
+
+  .logo-mark {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 0 30px rgba(0,212,170,0.25);
+  }
+
+  .header-text h1 {
+    font-family: var(--display);
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .header-text h1 span { color: var(--accent); }
+
+  .header-text p {
+    color: var(--text2);
+    font-size: 12px;
+    line-height: 1.6;
+    max-width: 560px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,212,170,0.08);
+    border: 1px solid rgba(0,212,170,0.2);
+    color: var(--accent);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    margin-left: 12px;
+    vertical-align: middle;
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .panel-header .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .panel-header h2 {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text2);
+  }
+
+  .panel-body { padding: 20px; }
+
+  /* Form */
+  .field { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+
+  input[type="text"], input[type="password"], textarea, select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.1);
+  }
+
+  input::placeholder { color: var(--text3); }
+
+  .help-text {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 5px;
+    line-height: 1.5;
+  }
+
+  .help-text a { color: var(--accent2); text-decoration: none; }
+  .help-text a:hover { text-decoration: underline; }
+
+  /* Token visibility toggle */
+  .input-wrap { position: relative; }
+  .input-wrap input { padding-right: 40px; }
+  .toggle-vis {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 2px;
+    font-size: 14px;
+    transition: color 0.2s;
+  }
+  .toggle-vis:hover { color: var(--accent); }
+
+  /* Format checkboxes */
+  .format-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .format-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .format-option:hover { border-color: var(--border); }
+  .format-option.active { border-color: var(--accent); background: rgba(0,212,170,0.05); }
+  .format-option.active .fmt-dot { background: var(--accent); }
+
+  .fmt-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text3);
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .fmt-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+
+  .fmt-sub {
+    font-size: 9px;
+    color: var(--text3);
+    display: block;
+    margin-top: 1px;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #00b891);
+    color: #000;
+    width: 100%;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 14px;
+    box-shadow: 0 4px 20px rgba(0,212,170,0.3);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 28px rgba(0,212,170,0.4);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1px solid var(--border2);
+    font-size: 11px;
+    padding: 8px 14px;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,170,0.05);
+  }
+
+  .btn-copy {
+    background: rgba(0,144,255,0.08);
+    color: var(--accent2);
+    border: 1px solid rgba(0,144,255,0.2);
+    font-size: 11px;
+    padding: 7px 14px;
+  }
+  .btn-copy:hover { background: rgba(0,144,255,0.15); }
+  .btn-copy.copied {
+    background: rgba(34,197,94,0.08);
+    color: var(--success);
+    border-color: rgba(34,197,94,0.2);
+  }
+
+  .btn-download {
+    background: rgba(168,85,247,0.08);
+    color: var(--accent4);
+    border: 1px solid rgba(168,85,247,0.2);
+    font-size: 11px;
+    padding: 7px 14px;
+  }
+  .btn-download:hover { background: rgba(168,85,247,0.15); }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 11px;
+    margin-top: 12px;
+    min-height: 40px;
+    transition: all 0.3s;
+  }
+
+  .status-bar.idle { background: var(--bg); color: var(--text3); border: 1px solid var(--border); }
+  .status-bar.loading { background: rgba(0,144,255,0.08); color: var(--accent2); border: 1px solid rgba(0,144,255,0.2); }
+  .status-bar.success { background: rgba(34,197,94,0.08); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+  .status-bar.error { background: rgba(239,68,68,0.08); color: var(--error); border: 1px solid rgba(239,68,68,0.2); }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(0,144,255,0.2);
+    border-top-color: var(--accent2);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Output area */
+  .output-panel { display: flex; flex-direction: column; gap: 16px; }
+
+  .diagram-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .diagram-card:hover { border-color: var(--border); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .diagram-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .diagram-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .diagram-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  .diagram-card-header h3 {
+    font-family: var(--display);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .diagram-card-header .tag {
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .card-actions { display: flex; gap: 6px; }
+
+  .code-block {
+    position: relative;
+    background: #080a0d;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #c8d3e0;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .code-block::-webkit-scrollbar { width: 6px; height: 6px; }
+  .code-block::-webkit-scrollbar-track { background: transparent; }
+  .code-block::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* Syntax colors */
+  .tok-keyword { color: #00d4aa; }
+  .tok-string { color: #f9c74f; }
+  .tok-comment { color: #4a5568; font-style: italic; }
+  .tok-node { color: #a78bfa; }
+  .tok-arrow { color: #60a5fa; }
+  .tok-bracket { color: #f472b6; }
+  .tok-xml-tag { color: #f97316; }
+  .tok-xml-attr { color: #a78bfa; }
+  .tok-xml-val { color: #4ade80; }
+
+  /* Embed instructions */
+  .embed-block {
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    background: rgba(0,212,170,0.02);
+  }
+
+  .embed-label {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .embed-code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--accent);
+    font-family: var(--mono);
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+
+  /* Demo section */
+  .demo-hint {
+    background: var(--surface2);
+    border: 1px dashed var(--border2);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    color: var(--text3);
+  }
+
+  .demo-hint p { margin-bottom: 12px; font-size: 12px; line-height: 1.6; }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    gap: 20px;
+    padding: 12px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .stat strong { color: var(--text2); }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* Scrollbar global */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo-mark">⟁</div>
+    <div class="header-text">
+      <h1>Miro <span>→</span> Diagrams <span class="badge">✦ v2.0</span></h1>
+      <p>Convert any Miro board into embeddable Mermaid flowcharts, sequence diagrams, Draw.io XML, and architecture flow diagrams — ready to drop into any <code>.md</code> file.</p>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- Left: Config panel -->
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="dot" style="background:#00d4aa"></div>
+          <h2>Connection</h2>
+        </div>
+        <div class="panel-body">
+
+          <div class="field">
+            <label>Miro Access Token</label>
+            <div class="input-wrap">
+              <input type="password" id="tokenInput" placeholder="miro_o_xxxxxxxxxxxxxx" />
+              <button class="toggle-vis" onclick="toggleTokenVis()" title="Toggle visibility">👁</button>
+            </div>
+            <p class="help-text">
+              Get your token at <a href="https://developers.miro.com/docs/rest-api-build-your-first-hello-world-app" target="_blank">developers.miro.com</a> → Your Apps → OAuth → Access Token
+            </p>
+          </div>
+
+          <div class="field">
+            <label>Board ID</label>
+            <input type="text" id="boardIdInput" placeholder="uXjVNxxxxxxxx=" />
+            <p class="help-text">Found in the Miro board URL: miro.com/app/board/<strong>BOARD_ID</strong>/</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field">
+            <label>Output Formats</label>
+            <div class="format-grid" id="formatGrid">
+              <div class="format-option active" data-format="mermaid-flow" onclick="toggleFormat(this)">
+                <div class="fmt-dot"></div>
+                <div>
+                  <div class="fmt-label">Mermaid Flow</div>
+                  <span class="fmt-sub">flowchart TD</span>
+                </div>
+              </div>
+              <div class="format-option active" data-format="mermaid-seq" onclick="toggleFormat(this)">
+                <div class="fmt-dot"></div>
+                <div>
+                  <div class="fmt-label">Sequence</div>
+                  <span class="fmt-sub">sequenceDiagram</span>
+                </div>
+              </div>
+              <div class="format-option active" data-format="drawio" onclick="toggleFormat(this)">
+                <div class="fmt-dot"></div>
+                <div>
+                  <div class="fmt-label">Draw.io XML</div>
+                  <span class="fmt-sub">.drawio / .xml</span>
+                </div>
+              </div>
+              <div class="format-option active" data-format="arch" onclick="toggleFormat(this)">
+                <div class="fmt-dot"></div>
+                <div>
+                  <div class="fmt-label">Architecture</div>
+                  <span class="fmt-sub">subgraph layers</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Direction (Mermaid)</label>
+            <select id="directionSelect">
+              <option value="TD">Top → Down (TD)</option>
+              <option value="LR">Left → Right (LR)</option>
+              <option value="BT">Bottom → Top (BT)</option>
+              <option value="RL">Right → Left (RL)</option>
+            </select>
+          </div>
+
+          <button class="btn btn-primary" id="convertBtn" onclick="convertBoard()">
+            ⟁ Convert Board
+          </button>
+
+          <div class="status-bar idle" id="statusBar">
+            <span>⊙</span>
+            <span id="statusText">Ready — enter credentials to begin</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <button class="btn btn-secondary" style="width:100%" onclick="loadDemo()">
+            ◈ Load demo board (no token needed)
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Quick guide -->
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-header">
+          <div class="dot" style="background:#0090ff"></div>
+          <h2>Embed Guide</h2>
+        </div>
+        <div class="panel-body" style="font-size:11px; color:var(--text2); line-height:1.8">
+          <p style="margin-bottom:8px; color:var(--text3); font-size:10px; text-transform:uppercase; letter-spacing:0.8px">In your .md file:</p>
+          <div class="embed-code">```mermaid</div>
+          <div style="height:4px"></div>
+          <div class="embed-code">paste diagram code here</div>
+          <div style="height:4px"></div>
+          <div class="embed-code">```</div>
+          <div class="divider"></div>
+          <p>✦ <strong>GitHub</strong> renders Mermaid natively</p>
+          <p>✦ <strong>GitLab</strong> supports Mermaid in docs</p>
+          <p>✦ <strong>Obsidian</strong> renders all formats</p>
+          <p>✦ <strong>Draw.io</strong> XML → import via File menu</p>
+          <p>✦ <strong>VS Code</strong> → Mermaid Preview extension</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Output panel -->
+    <div class="output-panel" id="outputPanel">
+      <div class="demo-hint">
+        <p style="font-size:18px; margin-bottom:8px">⟁</p>
+        <p>Your converted diagrams will appear here.<br>Each format is syntax-highlighted with a one-click copy button.</p>
+        <p style="margin-top:8px">Try the <strong>demo board</strong> to see it in action →</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let boardStats = { nodes: 0, edges: 0, frames: 0, items: 0 };
+
+// ─── Miro API ─────────────────────────────────────────────────────────────────
+async function fetchBoardItems(token, boardId) {
+  const items = [];
+  let cursor = null;
+  const limit = 50;
+
+  do {
+    const url = `https://api.miro.com/v2/boards/${encodeURIComponent(boardId)}/items?limit=${limit}${cursor ? '&cursor=' + cursor : ''}`;
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `API error ${res.status}: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    if (data.data) items.push(...data.data);
+    cursor = data.cursor || null;
+  } while (cursor);
+
+  return items;
+}
+
+// ─── Graph Builder ────────────────────────────────────────────────────────────
+function buildGraph(items) {
+  const nodes = new Map();
+  const edges = [];
+  const frames = new Map();
+
+  for (const item of items) {
+    const type = item.type;
+    const id = item.id;
+    let label = '';
+
+    if (type === 'connector') continue;
+
+    // Extract label
+    if (item.content) {
+      label = item.content.replace(/<[^>]+>/g, '').trim();
+    } else if (item.data?.content) {
+      label = item.data.content.replace(/<[^>]+>/g, '').trim();
+    } else if (item.data?.title) {
+      label = item.data.title;
+    } else if (item.data?.description) {
+      label = item.data.description.substring(0, 40);
+    }
+
+    label = label || `${type}_${id}`;
+    label = label.substring(0, 60).replace(/"/g, "'").replace(/\n/g, ' ').trim();
+
+    const nodeId = `N${id}`.replace(/[^a-zA-Z0-9_]/g, '_');
+
+    if (type === 'frame') {
+      frames.set(id, { id: nodeId, label, children: [], type });
+    } else {
+      nodes.set(id, {
+        id: nodeId,
+        label,
+        type,
+        parentId: item.parent?.id || null,
+        position: item.position || { x: 0, y: 0 },
+        style: item.style || {},
+        geometry: item.geometry || { width: 120, height: 60 }
+      });
+    }
+  }
+
+  // Assign children to frames
+  for (const [nId, node] of nodes) {
+    if (node.parentId && frames.has(node.parentId)) {
+      frames.get(node.parentId).children.push(nId);
+    }
+  }
+
+  // Process connectors
+  for (const item of items) {
+    if (item.type !== 'connector') continue;
+    const from = item.startItem?.id;
+    const to = item.endItem?.id;
+    if (!from || !to) continue;
+
+    let fromNode = nodes.get(from) || frames.get(from);
+    let toNode = nodes.get(to) || frames.get(to);
+    if (!fromNode || !toNode) continue;
+
+    let label = '';
+    if (item.captions?.length) {
+      label = item.captions.map(c => c.content?.replace(/<[^>]+>/g, '').trim()).filter(Boolean).join(' ');
+    }
+
+    edges.push({ from: fromNode.id, to: toNode.id, label: label.substring(0, 30) });
+  }
+
+  boardStats = {
+    nodes: nodes.size,
+    edges: edges.length,
+    frames: frames.size,
+    items: items.length
+  };
+
+  return { nodes, edges, frames };
+}
+
+// ─── Mermaid Flowchart ────────────────────────────────────────────────────────
+function toMermaidFlow(graph, direction) {
+  const dir = direction || 'TD';
+  const lines = [`flowchart ${dir}`];
+  const nodeShapes = {
+    shape: (id, lbl) => `  ${id}["${lbl}"]`,
+    sticky_note: (id, lbl) => `  ${id}(("${lbl}"))`,
+    card: (id, lbl) => `  ${id}["${lbl}"]`,
+    text: (id, lbl) => `  ${id}[/"${lbl}"/]`,
+    image: (id, lbl) => `  ${id}["🖼 ${lbl}"]`,
+    default: (id, lbl) => `  ${id}["${lbl}"]`
+  };
+
+  // Add frame subgraphs
+  for (const [fid, frame] of graph.frames) {
+    lines.push(`  subgraph ${frame.id}["${frame.label}"]`);
+    for (const childId of frame.children) {
+      const child = graph.nodes.get(childId);
+      if (child) {
+        const shapeFn = nodeShapes[child.type] || nodeShapes.default;
+        lines.push('  ' + shapeFn(child.id, child.label));
+      }
+    }
+    lines.push('  end');
+  }
+
+  // Standalone nodes (not in frames)
+  const childrenInFrames = new Set([...graph.frames.values()].flatMap(f => f.children));
+  for (const [nid, node] of graph.nodes) {
+    if (!childrenInFrames.has(nid)) {
+      const shapeFn = nodeShapes[node.type] || nodeShapes.default;
+      lines.push(shapeFn(node.id, node.label));
+    }
+  }
+
+  // Edges
+  for (const edge of graph.edges) {
+    if (edge.label) {
+      lines.push(`  ${edge.from} -->|"${edge.label}"| ${edge.to}`);
+    } else {
+      lines.push(`  ${edge.from} --> ${edge.to}`);
+    }
+  }
+
+  if (graph.nodes.size === 0 && graph.frames.size === 0) {
+    lines.push('  A["No items found"] --> B["Check board ID & token"]');
+  }
+
+  return lines.join('\n');
+}
+
+// ─── Mermaid Sequence Diagram ─────────────────────────────────────────────────
+function toMermaidSequence(graph) {
+  const lines = ['sequenceDiagram'];
+  lines.push('  autonumber');
+
+  // Derive actors from nodes (prioritize shapes/cards as participants)
+  const actors = new Map();
+  const allNodes = [...graph.nodes.values(), ...graph.frames.values()];
+
+  // Use first 10 nodes as participants
+  const participants = allNodes.slice(0, 10);
+  for (const p of participants) {
+    actors.set(p.id, p.label.split(' ').slice(0, 3).join(' '));
+    const shortName = p.label.split(' ').slice(0, 3).join(' ');
+    if (p.type === 'frame') {
+      lines.push(`  box ${p.label}`);
+      lines.push(`  participant ${p.id} as ${shortName}`);
+      lines.push(`  end`);
+    } else {
+      lines.push(`  participant ${p.id} as ${shortName}`);
+    }
+  }
+
+  if (graph.edges.length === 0 && allNodes.length > 1) {
+    // Generate implied sequence from left-to-right node order
+    const sorted = [...graph.nodes.values()].sort((a, b) =>
+      (a.position?.x || 0) - (b.position?.x || 0)
+    );
+    for (let i = 0; i < Math.min(sorted.length - 1, 8); i++) {
+      const from = sorted[i];
+      const to = sorted[i + 1];
+      lines.push(`  ${from.id}->>+${to.id}: step ${i + 1}`);
+    }
+  } else {
+    for (const edge of graph.edges.slice(0, 20)) {
+      const label = edge.label || 'request';
+      if (actors.has(edge.from) && actors.has(edge.to)) {
+        lines.push(`  ${edge.from}->>+${edge.to}: ${label}`);
+        lines.push(`  ${edge.to}-->>-${edge.from}: response`);
+      }
+    }
+  }
+
+  if (lines.length <= 3) {
+    lines.push('  participant Client');
+    lines.push('  participant Server');
+    lines.push('  participant DB as Database');
+    lines.push('  Client->>+Server: HTTP Request');
+    lines.push('  Server->>+DB: Query');
+    lines.push('  DB-->>-Server: Result Set');
+    lines.push('  Server-->>-Client: JSON Response');
+  }
+
+  return lines.join('\n');
+}
+
+// ─── Architecture Diagram ─────────────────────────────────────────────────────
+function toArchDiagram(graph, direction) {
+  const dir = direction || 'LR';
+  const lines = [`flowchart ${dir}`];
+
+  // Styling
+  lines.push('  %% Architecture Flow Diagram');
+  lines.push('  classDef service fill:#0d1117,stroke:#00d4aa,color:#e8ecf0,stroke-width:2px');
+  lines.push('  classDef datastore fill:#0d1117,stroke:#0090ff,color:#e8ecf0,stroke-width:2px');
+  lines.push('  classDef external fill:#0d1117,stroke:#f97316,color:#e8ecf0,stroke-width:2px,stroke-dasharray:5 5');
+  lines.push('  classDef frame fill:#111318,stroke:#252a34,color:#8892a0');
+  lines.push('');
+
+  const typeMap = {
+    shape: 'service',
+    sticky_note: 'external',
+    card: 'datastore',
+    text: 'external',
+    frame: 'frame',
+    default: 'service'
+  };
+
+  const styleAssign = [];
+
+  // Frames as subgraphs
+  for (const [fid, frame] of graph.frames) {
+    lines.push(`  subgraph ${frame.id}["🗂 ${frame.label}"]`);
+    lines.push(`    direction ${dir === 'LR' ? 'TB' : 'LR'}`);
+    for (const childId of frame.children) {
+      const child = graph.nodes.get(childId);
+      if (!child) continue;
+      const shape = child.type === 'sticky_note'
+        ? `(["${child.label}"])`
+        : child.type === 'card'
+          ? `[("${child.label}")]`
+          : `["${child.label}"]`;
+      lines.push(`    ${child.id}${shape}`);
+      styleAssign.push(`  class ${child.id} ${typeMap[child.type] || 'service'}`);
+    }
+    lines.push('  end');
+    styleAssign.push(`  class ${frame.id} frame`);
+  }
+
+  // Standalone nodes
+  const childrenInFrames = new Set([...graph.frames.values()].flatMap(f => f.children));
+  for (const [nid, node] of graph.nodes) {
+    if (!childrenInFrames.has(nid)) {
+      const shape = node.type === 'sticky_note'
+        ? `(["${node.label}"])`
+        : node.type === 'card'
+          ? `[("${node.label}")]`
+          : `["${node.label}"]`;
+      lines.push(`  ${node.id}${shape}`);
+      styleAssign.push(`  class ${node.id} ${typeMap[node.type] || 'service'}`);
+    }
+  }
+
+  lines.push('');
+
+  // Edges with styling
+  for (const edge of graph.edges) {
+    if (edge.label) {
+      lines.push(`  ${edge.from} -.->|"${edge.label}"| ${edge.to}`);
+    } else {
+      lines.push(`  ${edge.from} ==> ${edge.to}`);
+    }
+  }
+
+  lines.push('');
+  lines.push(...styleAssign);
+
+  if (graph.nodes.size === 0 && graph.frames.size === 0) {
+    lines.push('  subgraph Frontend["🖥 Frontend"]');
+    lines.push('    UI["React App"]');
+    lines.push('  end');
+    lines.push('  subgraph Backend["⚙ Backend"]');
+    lines.push('    API["REST API"]');
+    lines.push('    Auth["Auth Service"]');
+    lines.push('  end');
+    lines.push('  subgraph Data["💾 Data Layer"]');
+    lines.push('    DB[("PostgreSQL")]');
+    lines.push('    Cache[("Redis")]');
+    lines.push('  end');
+    lines.push('  UI ==> API');
+    lines.push('  API ==> Auth');
+    lines.push('  API ==> DB');
+    lines.push('  API -.->|"cache"| Cache');
+    lines.push('  class UI,API,Auth service');
+    lines.push('  class DB,Cache datastore');
+  }
+
+  return lines.join('\n');
+}
+
+// ─── Draw.io XML ──────────────────────────────────────────────────────────────
+function toDrawioXml(graph) {
+  let id = 1;
+  const cells = [];
+
+  // Default style templates
+  const styles = {
+    shape: 'rounded=1;whiteSpace=wrap;html=1;fillColor=#1a1f2e;strokeColor=#00d4aa;fontColor=#e8ecf0;arcSize=8;',
+    sticky_note: 'shape=mxgraph.sticky4.sticky;whiteSpace=wrap;html=1;fillColor=#f9c74f;strokeColor=#c9a227;fontColor=#000;',
+    card: 'rounded=1;whiteSpace=wrap;html=1;fillColor=#1a2a3a;strokeColor=#0090ff;fontColor=#e8ecf0;',
+    text: 'text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontColor=#8892a0;',
+    frame: 'points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;fillColor=#111318;strokeColor=#252a34;fontColor=#8892a0;',
+    connector: 'rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=-1;entryX=0.5;entryY=0;entryDx=0;entryDy=-1;strokeColor=#60a5fa;fontColor=#e8ecf0;'
+  };
+
+  const nodeIdMap = new Map();
+
+  const posX = (n, i) => n.position?.x || (i % 4) * 220 + 40;
+  const posY = (n, i) => n.position?.y || Math.floor(i / 4) * 160 + 40;
+
+  // Add frames
+  let fi = 0;
+  for (const [fid, frame] of graph.frames) {
+    const cid = ++id;
+    nodeIdMap.set(frame.id, cid);
+    const x = 40 + fi * 260;
+    const y = 40;
+    const h = Math.max(200, frame.children.length * 90 + 80);
+    cells.push(`    <mxCell id="${cid}" value="${escXml(frame.label)}" style="${styles.frame}" vertex="1" parent="1">
+      <mxGeometry x="${x}" y="${y}" width="220" height="${h}" as="geometry" />
+    </mxCell>`);
+    fi++;
+  }
+
+  // Add nodes
+  let ni = 0;
+  for (const [nid, node] of graph.nodes) {
+    const cid = ++id;
+    nodeIdMap.set(node.id, cid);
+    const parentId = node.parentId && frames.has ? null : null;
+    const x = posX(node, ni);
+    const y = posY(node, ni);
+    const w = node.geometry?.width || 160;
+    const h2 = node.geometry?.height || 60;
+    const style = styles[node.type] || styles.shape;
+    cells.push(`    <mxCell id="${cid}" value="${escXml(node.label)}" style="${style}" vertex="1" parent="1">
+      <mxGeometry x="${x}" y="${y}" width="${w}" height="${h2}" as="geometry" />
+    </mxCell>`);
+    ni++;
+  }
+
+  // Add edges
+  for (const edge of graph.edges) {
+    const cid = ++id;
+    const sourceId = nodeIdMap.get(edge.from);
+    const targetId = nodeIdMap.get(edge.to);
+    if (!sourceId || !targetId) continue;
+    cells.push(`    <mxCell id="${cid}" value="${escXml(edge.label || '')}" style="${styles.connector}" edge="1" source="${sourceId}" target="${targetId}" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>`);
+  }
+
+  if (cells.length === 0) {
+    cells.push(`    <mxCell id="2" value="Frontend" style="${styles.shape}" vertex="1" parent="1">
+      <mxGeometry x="80" y="80" width="160" height="60" as="geometry" />
+    </mxCell>`);
+    cells.push(`    <mxCell id="3" value="Backend API" style="${styles.shape}" vertex="1" parent="1">
+      <mxGeometry x="340" y="80" width="160" height="60" as="geometry" />
+    </mxCell>`);
+    cells.push(`    <mxCell id="4" value="Database" style="${styles.card}" vertex="1" parent="1">
+      <mxGeometry x="600" y="80" width="160" height="60" as="geometry" />
+    </mxCell>`);
+    cells.push(`    <mxCell id="5" value="" style="${styles.connector}" edge="1" source="2" target="3" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>`);
+    cells.push(`    <mxCell id="6" value="" style="${styles.connector}" edge="1" source="3" target="4" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>`);
+  }
+
+  return `<mxfile host="Electron" modified="2024-01-01T00:00:00.000Z" agent="Miro-Converter" version="21.0.0" type="device">
+  <diagram name="Miro Board" id="board">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0" background="#0a0c0f">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+${cells.join('\n')}
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>`;
+}
+
+function escXml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ─── Syntax highlighting ──────────────────────────────────────────────────────
+function highlightMermaid(code) {
+  return code
+    .replace(/^(flowchart|sequenceDiagram|graph|subgraph|end|autonumber|participant|box)(\s)/gm,
+      '<span class="tok-keyword">$1</span>$2')
+    .replace(/("([^"]*)")/g, '<span class="tok-string">$1</span>')
+    .replace(/(->>|-->>|->>+|-->>-|==>|-->|\.->/g, '<span class="tok-arrow">$1</span>')
+    .replace(/(-->|==>|-.->)/g, '<span class="tok-arrow">$1</span>')
+    .replace(/%%.*$/gm, '<span class="tok-comment">$&</span>')
+    .replace(/classDef\s+\w+/g, '<span class="tok-keyword">$&</span>')
+    .replace(/\[|\]|\(|\)/g, '<span class="tok-bracket">$&</span>');
+}
+
+function highlightXml(code) {
+  return code
+    .replace(/(&lt;\/?)([\w]+)/g, '<span class="tok-xml-tag">$1$2</span>')
+    .replace(/(\w+)=/g, '<span class="tok-xml-attr">$1</span>=')
+    .replace(/"([^"]*)"/g, '<span class="tok-xml-val">"$1"</span>');
+}
+
+// ─── Render output ────────────────────────────────────────────────────────────
+function renderOutput(results) {
+  const panel = document.getElementById('outputPanel');
+  panel.innerHTML = '';
+
+  // Stats bar
+  if (boardStats.items > 0) {
+    const statsDiv = document.createElement('div');
+    statsDiv.className = 'panel';
+    statsDiv.innerHTML = `
+      <div class="stats">
+        <div class="stat">📦 <strong>${boardStats.items}</strong> items fetched</div>
+        <div class="stat">⬡ <strong>${boardStats.nodes}</strong> nodes</div>
+        <div class="stat">→ <strong>${boardStats.edges}</strong> edges</div>
+        <div class="stat">🗂 <strong>${boardStats.frames}</strong> frames</div>
+        <div class="stat" style="margin-left:auto">✦ ${results.length} formats generated</div>
+      </div>`;
+    panel.appendChild(statsDiv);
+  }
+
+  const configs = [
+    {
+      key: 'mermaid-flow',
+      title: 'Mermaid Flowchart',
+      icon: '⬡',
+      iconBg: 'rgba(0,212,170,0.15)',
+      iconColor: '#00d4aa',
+      tag: 'flowchart',
+      tagBg: 'rgba(0,212,170,0.1)',
+      tagColor: '#00d4aa',
+      embedHint: '```mermaid ... ```',
+      highlight: highlightMermaid,
+      ext: 'md'
+    },
+    {
+      key: 'mermaid-seq',
+      title: 'Sequence Diagram',
+      icon: '⇄',
+      iconBg: 'rgba(0,144,255,0.15)',
+      iconColor: '#0090ff',
+      tag: 'sequenceDiagram',
+      tagBg: 'rgba(0,144,255,0.1)',
+      tagColor: '#0090ff',
+      embedHint: '```mermaid ... ```',
+      highlight: highlightMermaid,
+      ext: 'md'
+    },
+    {
+      key: 'drawio',
+      title: 'Draw.io XML',
+      icon: '◫',
+      iconBg: 'rgba(249,115,22,0.15)',
+      iconColor: '#f97316',
+      tag: '.drawio',
+      tagBg: 'rgba(249,115,22,0.1)',
+      tagColor: '#f97316',
+      embedHint: 'Save as diagram.drawio, import via File → Import',
+      highlight: highlightXml,
+      ext: 'drawio'
+    },
+    {
+      key: 'arch',
+      title: 'Architecture Flow',
+      icon: '⬡',
+      iconBg: 'rgba(168,85,247,0.15)',
+      iconColor: '#a855f7',
+      tag: 'architecture',
+      tagBg: 'rgba(168,85,247,0.1)',
+      tagColor: '#a855f7',
+      embedHint: '```mermaid ... ```',
+      highlight: highlightMermaid,
+      ext: 'md'
+    }
+  ];
+
+  for (const result of results) {
+    const cfg = configs.find(c => c.key === result.format);
+    if (!cfg) continue;
+
+    const card = document.createElement('div');
+    card.className = 'diagram-card';
+    card.innerHTML = `
+      <div class="diagram-card-header">
+        <div class="diagram-title">
+          <div class="diagram-icon" style="background:${cfg.iconBg};color:${cfg.iconColor}">${cfg.icon}</div>
+          <h3>${cfg.title}</h3>
+          <span class="tag" style="background:${cfg.tagBg};color:${cfg.tagColor}">${cfg.tag}</span>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-copy" onclick="copyCode(this, '${result.format}')">⎘ Copy</button>
+          <button class="btn btn-download" onclick="downloadCode('${result.format}', '${cfg.ext}')">⬇ .${cfg.ext}</button>
+        </div>
+      </div>
+      <pre class="code-block" id="code-${result.format}">${cfg.highlight(escapeHtml(result.code))}</pre>
+      <div class="embed-block">
+        <div class="embed-label">Embed in .md</div>
+        <div class="embed-code">${cfg.embedHint}</div>
+      </div>`;
+
+    panel.appendChild(card);
+  }
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ─── Copy & download ──────────────────────────────────────────────────────────
+const codeStore = {};
+
+function copyCode(btn, format) {
+  const code = codeStore[format];
+  if (!code) return;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '⎘ Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
+function downloadCode(format, ext) {
+  const code = codeStore[format];
+  if (!code) return;
+  const blob = new Blob([code], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `miro-${format}.${ext}`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ─── UI Helpers ───────────────────────────────────────────────────────────────
+function setStatus(type, msg) {
+  const bar = document.getElementById('statusBar');
+  const text = document.getElementById('statusText');
+  bar.className = `status-bar ${type}`;
+  const icon = { idle: '⊙', loading: '', success: '✓', error: '✕' }[type];
+  bar.innerHTML = type === 'loading'
+    ? `<div class="spinner"></div><span>${msg}</span>`
+    : `<span>${icon}</span><span>${msg}</span>`;
+}
+
+function toggleFormat(el) {
+  el.classList.toggle('active');
+}
+
+function toggleTokenVis() {
+  const input = document.getElementById('tokenInput');
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+function getActiveFormats() {
+  return [...document.querySelectorAll('.format-option.active')].map(el => el.dataset.format);
+}
+
+// ─── Main convert ─────────────────────────────────────────────────────────────
+async function convertBoard() {
+  const token = document.getElementById('tokenInput').value.trim();
+  const boardId = document.getElementById('boardIdInput').value.trim();
+  const direction = document.getElementById('directionSelect').value;
+  const formats = getActiveFormats();
+
+  if (!token || !boardId) {
+    setStatus('error', 'Please enter both Access Token and Board ID');
+    return;
+  }
+
+  if (formats.length === 0) {
+    setStatus('error', 'Select at least one output format');
+    return;
+  }
+
+  const btn = document.getElementById('convertBtn');
+  btn.disabled = true;
+  setStatus('loading', 'Fetching board items from Miro API...');
+
+  try {
+    const items = await fetchBoardItems(token, boardId);
+    setStatus('loading', `Building graph from ${items.length} items...`);
+
+    const graph = buildGraph(items);
+    const results = [];
+
+    for (const fmt of formats) {
+      let code = '';
+      if (fmt === 'mermaid-flow') code = toMermaidFlow(graph, direction);
+      else if (fmt === 'mermaid-seq') code = toMermaidSequence(graph);
+      else if (fmt === 'drawio') code = toDrawioXml(graph);
+      else if (fmt === 'arch') code = toArchDiagram(graph, direction);
+
+      codeStore[fmt] = code;
+      results.push({ format: fmt, code });
+    }
+
+    renderOutput(results);
+    setStatus('success', `Converted ${boardStats.nodes} nodes, ${boardStats.edges} edges → ${formats.length} diagram formats`);
+  } catch (err) {
+    setStatus('error', `Error: ${err.message}`);
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ─── Demo board ───────────────────────────────────────────────────────────────
+function loadDemo() {
+  // Simulated demo board data
+  const demoItems = [
+    { id: '1', type: 'frame', content: 'Frontend Layer', position: { x: 0, y: 0 }, geometry: { width: 280, height: 320 } },
+    { id: '2', type: 'shape', content: 'React App', position: { x: 30, y: 60 }, geometry: { width: 160, height: 60 }, parent: { id: '1' } },
+    { id: '3', type: 'shape', content: 'Redux Store', position: { x: 30, y: 160 }, geometry: { width: 160, height: 60 }, parent: { id: '1' } },
+    { id: '4', type: 'card', content: 'Auth Module', position: { x: 30, y: 260 }, geometry: { width: 160, height: 60 }, parent: { id: '1' } },
+    { id: '5', type: 'frame', content: 'Backend Services', position: { x: 340, y: 0 }, geometry: { width: 280, height: 320 } },
+    { id: '6', type: 'shape', content: 'API Gateway', position: { x: 370, y: 60 }, geometry: { width: 160, height: 60 }, parent: { id: '5' } },
+    { id: '7', type: 'shape', content: 'Auth Service', position: { x: 370, y: 160 }, geometry: { width: 160, height: 60 }, parent: { id: '5' } },
+    { id: '8', type: 'card', content: 'Notification Svc', position: { x: 370, y: 260 }, geometry: { width: 160, height: 60 }, parent: { id: '5' } },
+    { id: '9', type: 'frame', content: 'Data Layer', position: { x: 680, y: 0 }, geometry: { width: 280, height: 220 } },
+    { id: '10', type: 'card', content: 'PostgreSQL', position: { x: 710, y: 60 }, geometry: { width: 160, height: 60 }, parent: { id: '9' } },
+    { id: '11', type: 'sticky_note', content: 'Redis Cache', position: { x: 710, y: 160 }, geometry: { width: 160, height: 60 }, parent: { id: '9' } },
+    { id: '12', type: 'shape', content: 'CDN / Load Balancer', position: { x: 200, y: 400 }, geometry: { width: 200, height: 60 } },
+    { id: 'c1', type: 'connector', startItem: { id: '2' }, endItem: { id: '6' }, captions: [{ content: 'REST / GraphQL' }] },
+    { id: 'c2', type: 'connector', startItem: { id: '6' }, endItem: { id: '7' }, captions: [{ content: 'JWT Verify' }] },
+    { id: 'c3', type: 'connector', startItem: { id: '6' }, endItem: { id: '10' }, captions: [{ content: 'SQL Query' }] },
+    { id: 'c4', type: 'connector', startItem: { id: '6' }, endItem: { id: '11' }, captions: [{ content: 'Cache Read' }] },
+    { id: 'c5', type: 'connector', startItem: { id: '7' }, endItem: { id: '4' }, captions: [{ content: 'Token Issue' }] },
+    { id: 'c6', type: 'connector', startItem: { id: '12' }, endItem: { id: '2' }, captions: [] },
+    { id: 'c7', type: 'connector', startItem: { id: '8' }, endItem: { id: '10' }, captions: [{ content: 'Event Log' }] },
+  ];
+
+  boardStats = { nodes: 0, edges: 0, frames: 0, items: demoItems.length };
+
+  const graph = buildGraph(demoItems);
+  const direction = document.getElementById('directionSelect').value;
+  const formats = getActiveFormats();
+  const results = [];
+
+  for (const fmt of formats) {
+    let code = '';
+    if (fmt === 'mermaid-flow') code = toMermaidFlow(graph, direction);
+    else if (fmt === 'mermaid-seq') code = toMermaidSequence(graph);
+    else if (fmt === 'drawio') code = toDrawioXml(graph);
+    else if (fmt === 'arch') code = toArchDiagram(graph, direction);
+
+    codeStore[fmt] = code;
+    results.push({ format: fmt, code });
+  }
+
+  renderOutput(results);
+  setStatus('success', `Demo loaded: ${boardStats.nodes} nodes, ${boardStats.edges} edges → ${formats.length} formats`);
+}
+</script>
+</body>
+</html>
