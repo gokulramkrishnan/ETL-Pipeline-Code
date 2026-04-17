@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DiagramForge — Board to Diagram Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════════════ */
+:root {
+  --bg:        #0b0d11;
+  --bg1:       #10131a;
+  --bg2:       #161b25;
+  --bg3:       #1c2230;
+  --line:      #232b3a;
+  --line2:     #2c3649;
+  --blue:      #00b4ff;
+  --blue-dim:  rgba(0,180,255,.08);
+  --blue-glow: rgba(0,180,255,.18);
+  --amber:     #ffb340;
+  --amber-dim: rgba(255,179,64,.08);
+  --green:     #34d399;
+  --green-dim: rgba(52,211,153,.08);
+  --violet:    #a78bfa;
+  --violet-dim:rgba(167,139,250,.08);
+  --red:       #f87171;
+  --red-dim:   rgba(248,113,113,.08);
+  --text:      #dde4ef;
+  --text2:     #7a8899;
+  --text3:     #3d4d60;
+  --mono:      'IBM Plex Mono', monospace;
+  --sans:      'IBM Plex Sans', sans-serif;
+  --display:   'Bebas Neue', sans-serif;
+  --r:         10px;
+  --r-sm:      6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* Dot-grid bg */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  opacity: .5;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════════════ */
+.app { position: relative; z-index: 1; max-width: 1340px; margin: 0 auto; padding: 36px 28px 80px; }
+
+/* ═══════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════ */
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 44px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--line2);
+}
+
+.brand { display: flex; align-items: center; gap: 18px; }
+
+.brand-icon {
+  width: 56px; height: 56px;
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  position: relative;
+  overflow: hidden;
+}
+.brand-icon::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--blue-dim), transparent 60%);
+}
+
+.brand-name {
+  font-family: var(--display);
+  font-size: 42px;
+  letter-spacing: 2px;
+  line-height: 1;
+  color: var(--text);
+}
+.brand-name em { color: var(--blue); font-style: normal; }
+
+.brand-tagline {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.api-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.api-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.api-input-wrap { position: relative; }
+.api-input {
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-sm);
+  padding: 9px 40px 9px 14px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  width: 320px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.api-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+}
+.api-input::placeholder { color: var(--text3); }
+.eye-btn {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--text3); cursor: pointer;
+  font-size: 15px; padding: 2px; transition: color .2s;
+}
+.eye-btn:hover { color: var(--blue); }
+
+.api-hint {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+}
+.api-hint a { color: var(--blue); text-decoration: none; }
+.api-hint a:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════════════════
+   MAIN GRID
+═══════════════════════════════════════════════════════ */
+.main-grid {
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CARD
+═══════════════════════════════════════════════════════ */
+.card {
+  background: var(--bg1);
+  border: 1px solid var(--line2);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.card-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+}
+.card-head-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+.card-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.card-body { padding: 22px; }
+
+/* ═══════════════════════════════════════════════════════
+   INPUT TABS
+═══════════════════════════════════════════════════════ */
+.tab-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 20px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 5px;
+}
+
+.tab-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 6px;
+  border: none; border-radius: 5px;
+  background: transparent;
+  color: var(--text3);
+  cursor: pointer;
+  transition: all .2s;
+  font-family: var(--mono);
+}
+.tab-btn .tab-icon { font-size: 18px; line-height: 1; }
+.tab-btn .tab-label { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+.tab-btn:hover { color: var(--text2); background: var(--bg2); }
+.tab-btn.active {
+  background: var(--blue-dim);
+  color: var(--blue);
+  border: 1px solid rgba(0,180,255,.2);
+}
+
+/* ═══════════════════════════════════════════════════════
+   INPUT PANES
+═══════════════════════════════════════════════════════ */
+.input-pane { display: none; animation: fadeUp .25s ease; }
+.input-pane.active { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed var(--line2);
+  border-radius: var(--r);
+  padding: 36px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  background: var(--bg);
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--blue);
+  background: var(--blue-dim);
+}
+.drop-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.dz-icon { font-size: 32px; margin-bottom: 10px; display: block; }
+.dz-title { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+.dz-sub { font-size: 11px; color: var(--text3); }
+.dz-accept { font-family: var(--mono); font-size: 10px; color: var(--blue); margin-top: 8px; letter-spacing: .5px; }
+
+.file-preview {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+.file-preview.show { display: flex; }
+.file-preview-icon { font-size: 22px; flex-shrink: 0; }
+.file-preview-info { flex: 1; min-width: 0; }
+.file-preview-name { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-preview-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.file-preview-clear {
+  background: none; border: none; color: var(--text3); cursor: pointer; font-size: 18px; padding: 2px;
+  flex-shrink: 0; line-height: 1;
+}
+.file-preview-clear:hover { color: var(--red); }
+
+/* Image preview */
+.img-thumb {
+  display: none;
+  width: 100%; max-height: 220px; object-fit: contain;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  margin-top: 10px;
+  background: var(--bg);
+}
+.img-thumb.show { display: block; }
+
+/* CSV preview table */
+.csv-table-wrap {
+  display: none;
+  margin-top: 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  overflow: auto;
+  max-height: 180px;
+}
+.csv-table-wrap.show { display: block; }
+.csv-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+.csv-table th {
+  background: var(--bg3); color: var(--blue);
+  padding: 6px 10px; text-align: left; font-weight: 600;
+  border-bottom: 1px solid var(--line2); white-space: nowrap;
+}
+.csv-table td {
+  padding: 5px 10px; color: var(--text2);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap; max-width: 160px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.csv-table tr:last-child td { border-bottom: none; }
+.csv-table tr:hover td { background: var(--bg2); }
+
+/* Miro embed */
+.miro-field { margin-bottom: 14px; }
+.miro-field label {
+  display: block;
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 6px;
+}
+.miro-field input, .miro-field textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  resize: vertical;
+}
+.miro-field textarea { min-height: 80px; }
+.miro-field input:focus, .miro-field textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+}
+.miro-field input::placeholder, .miro-field textarea::placeholder { color: var(--text3); }
+
+.miro-embed-preview {
+  display: none;
+  width: 100%; height: 200px;
+  border: 1px solid var(--line2);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  margin-top: 8px;
+}
+.miro-embed-preview.show { display: block; }
+
+/* Description field shared */
+.desc-field { margin-top: 14px; }
+.desc-field label {
+  display: block;
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 6px;
+}
+.desc-field textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  resize: vertical;
+  min-height: 68px;
+}
+.desc-field textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+}
+.desc-field textarea::placeholder { color: var(--text3); }
+
+/* ═══════════════════════════════════════════════════════
+   OUTPUT OPTIONS
+═══════════════════════════════════════════════════════ */
+.section-sep {
+  height: 1px; background: var(--line); margin: 20px 0;
+}
+
+.section-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 12px;
+}
+
+.format-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-bottom: 20px;
+}
+.fmt-opt {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg); border: 1px solid var(--line2);
+  border-radius: var(--r-sm); padding: 10px 12px;
+  cursor: pointer; transition: all .15s; user-select: none;
+}
+.fmt-opt:hover { border-color: var(--line); }
+.fmt-opt.on { border-color: var(--blue); background: var(--blue-dim); }
+.fmt-opt.on .fmt-check { background: var(--blue); border-color: var(--blue); }
+.fmt-opt.on .fmt-check::after { display: block; }
+.fmt-check {
+  width: 16px; height: 16px; border-radius: 4px;
+  border: 1.5px solid var(--line2);
+  background: transparent; flex-shrink: 0;
+  transition: all .15s; position: relative;
+}
+.fmt-check::after {
+  content: '✓'; display: none;
+  position: absolute; top: -1px; left: 2px;
+  font-size: 11px; font-weight: 700; color: var(--bg);
+}
+.fmt-info .fmt-name {
+  font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text);
+}
+.fmt-info .fmt-desc { font-size: 10px; color: var(--text3); margin-top: 1px; }
+
+/* Direction */
+.dir-row { display: flex; gap: 6px; }
+.dir-btn {
+  flex: 1; padding: 8px 4px; border-radius: var(--r-sm);
+  background: var(--bg); border: 1px solid var(--line2);
+  color: var(--text3); font-family: var(--mono); font-size: 11px;
+  cursor: pointer; transition: all .15s; text-align: center;
+}
+.dir-btn:hover { border-color: var(--line); color: var(--text2); }
+.dir-btn.on { border-color: var(--amber); background: var(--amber-dim); color: var(--amber); }
+
+/* ═══════════════════════════════════════════════════════
+   GENERATE BUTTON
+═══════════════════════════════════════════════════════ */
+.generate-btn {
+  width: 100%; padding: 16px;
+  background: var(--blue);
+  border: none; border-radius: var(--r);
+  color: var(--bg); font-family: var(--display);
+  font-size: 22px; letter-spacing: 3px;
+  cursor: pointer; transition: all .2s;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow: 0 4px 24px rgba(0,180,255,.25);
+}
+.generate-btn:hover {
+  background: #1ac4ff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(0,180,255,.35);
+}
+.generate-btn:active { transform: translateY(0); }
+.generate-btn:disabled {
+  opacity: .45; cursor: not-allowed;
+  transform: none; box-shadow: none;
+}
+
+/* Status */
+.status-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: var(--r-sm);
+  font-family: var(--mono); font-size: 11px;
+  margin-top: 12px; min-height: 40px;
+  border: 1px solid transparent;
+  transition: all .25s;
+}
+.status-row.hidden { opacity: 0; }
+.status-row.loading { background: var(--blue-dim); color: var(--blue); border-color: rgba(0,180,255,.2); }
+.status-row.ok      { background: var(--green-dim); color: var(--green); border-color: rgba(52,211,153,.2); }
+.status-row.err     { background: var(--red-dim); color: var(--red); border-color: rgba(248,113,113,.2); }
+.spinner {
+  width: 14px; height: 14px; flex-shrink: 0;
+  border: 2px solid rgba(0,180,255,.25); border-top-color: var(--blue);
+  border-radius: 50%; animation: spin .75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════
+   OUTPUT PANEL
+═══════════════════════════════════════════════════════ */
+.output-area {
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* Empty state */
+.empty-state {
+  background: var(--bg1);
+  border: 1px solid var(--line2);
+  border-radius: 16px;
+  padding: 64px 32px;
+  text-align: center;
+}
+.empty-glyph {
+  font-size: 52px; display: block; margin-bottom: 16px;
+  filter: grayscale(1) opacity(.3);
+}
+.empty-title {
+  font-family: var(--display); font-size: 28px;
+  letter-spacing: 2px; color: var(--text3); margin-bottom: 8px;
+}
+.empty-sub { font-size: 12px; color: var(--text3); line-height: 1.7; font-family: var(--mono); }
+
+/* Output card */
+.out-card {
+  background: var(--bg1);
+  border: 1px solid var(--line2);
+  border-radius: 16px; overflow: hidden;
+  animation: fadeUp .3s ease;
+  transition: border-color .2s;
+}
+.out-card:hover { border-color: var(--line); }
+
+.out-card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 18px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+}
+.out-card-meta { display: flex; align-items: center; gap: 10px; }
+.out-card-chip {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.out-card-title { font-family: var(--mono); font-size: 13px; font-weight: 600; color: var(--text); }
+.out-card-badge {
+  font-family: var(--mono); font-size: 9px; font-weight: 600;
+  letter-spacing: .8px; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 20px;
+}
+.out-card-actions { display: flex; gap: 6px; }
+
+/* Code block */
+.code-wrap {
+  background: #070a0e;
+  position: relative;
+  max-height: 340px; overflow-y: auto;
+}
+.code-wrap pre {
+  padding: 18px 20px;
+  font-family: var(--mono);
+  font-size: 12px; line-height: 1.75;
+  color: #bfc9d9; overflow-x: auto;
+  white-space: pre;
+}
+.code-wrap::-webkit-scrollbar { width: 5px; }
+.code-wrap::-webkit-scrollbar-thumb { background: var(--line2); border-radius: 3px; }
+
+/* Embed strip */
+.embed-strip {
+  padding: 11px 18px;
+  border-top: 1px solid var(--line);
+  background: rgba(0,180,255,.02);
+  display: flex; align-items: center; gap: 10px;
+}
+.embed-strip-label { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: .8px; text-transform: uppercase; flex-shrink: 0; }
+.embed-strip-code { font-family: var(--mono); font-size: 11px; color: var(--blue); flex: 1; }
+
+/* ═══════════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 13px; border-radius: var(--r-sm);
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  border: 1px solid transparent; cursor: pointer; transition: all .15s;
+  white-space: nowrap;
+}
+.btn-ghost { background: var(--bg3); color: var(--text2); border-color: var(--line2); }
+.btn-ghost:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-dim); }
+.btn-copy { background: var(--blue-dim); color: var(--blue); border-color: rgba(0,180,255,.2); }
+.btn-copy:hover { background: rgba(0,180,255,.15); }
+.btn-copy.done { background: var(--green-dim); color: var(--green); border-color: rgba(52,211,153,.2); }
+.btn-dl { background: var(--violet-dim); color: var(--violet); border-color: rgba(167,139,250,.2); }
+.btn-dl:hover { background: rgba(167,139,250,.15); }
+
+/* ═══════════════════════════════════════════════════════
+   SYNTAX HIGHLIGHT
+═══════════════════════════════════════════════════════ */
+.kw   { color: #00b4ff; }
+.str  { color: #ffc145; }
+.cmt  { color: #3b4a5e; font-style: italic; }
+.nd   { color: #c084fc; }
+.arr  { color: #60a5fa; }
+.br   { color: #f472b6; }
+.xt   { color: #fb923c; }
+.xa   { color: #c084fc; }
+.xv   { color: #4ade80; }
+
+/* ═══════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════ */
+.footer {
+  margin-top: 60px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  letter-spacing: .8px;
+}
+.footer a { color: var(--blue); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════ */
+@media (max-width: 960px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: flex-start; }
+  .api-input { width: 100%; }
+  .header-right { align-items: flex-start; width: 100%; }
+  .api-row { flex-wrap: wrap; width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══ HEADER ═══════════════════════════════════════════════════ -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-icon">⟁</div>
+      <div>
+        <div class="brand-name">Diagram<em>Forge</em></div>
+        <div class="brand-tagline">PDF · CSV · Image · Miro → Mermaid · Draw.io · Architecture</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="api-row">
+        <span class="api-label">Claude API Key</span>
+        <div class="api-input-wrap">
+          <input id="apiKey" class="api-input" type="password" placeholder="sk-ant-api03-..." autocomplete="off">
+          <button class="eye-btn" onclick="toggleKey()" title="Toggle visibility">👁</button>
+        </div>
+      </div>
+      <div class="api-hint">
+        Get a key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> — stored only in your browser session
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN GRID ═════════════════════════════════════════════════ -->
+  <div class="main-grid">
+
+    <!-- ─── LEFT: INPUT PANEL ──────────────────────────────────── -->
+    <div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-dot" style="background:var(--blue)"></div>
+          <span class="card-head-title">Input Source</span>
+        </div>
+        <div class="card-body">
+
+          <!-- Tab bar -->
+          <div class="tab-bar">
+            <button class="tab-btn active" data-tab="pdf" onclick="switchTab('pdf')">
+              <span class="tab-icon">📄</span>
+              <span class="tab-label">PDF</span>
+            </button>
+            <button class="tab-btn" data-tab="csv" onclick="switchTab('csv')">
+              <span class="tab-icon">📊</span>
+              <span class="tab-label">CSV</span>
+            </button>
+            <button class="tab-btn" data-tab="image" onclick="switchTab('image')">
+              <span class="tab-icon">🖼</span>
+              <span class="tab-label">Image</span>
+            </button>
+            <button class="tab-btn" data-tab="miro" onclick="switchTab('miro')">
+              <span class="tab-icon">⬡</span>
+              <span class="tab-label">Miro</span>
+            </button>
+          </div>
+
+          <!-- PDF pane -->
+          <div class="input-pane active" id="pane-pdf">
+            <div class="drop-zone" id="dz-pdf">
+              <input type="file" accept=".pdf,application/pdf" id="file-pdf" onchange="handleFileSelect('pdf')">
+              <span class="dz-icon">📄</span>
+              <div class="dz-title">Drop your PDF here</div>
+              <div class="dz-sub">or click to browse</div>
+              <div class="dz-accept">Accepts .pdf up to 32 MB</div>
+            </div>
+            <div class="file-preview" id="preview-pdf">
+              <span class="file-preview-icon">📄</span>
+              <div class="file-preview-info">
+                <div class="file-preview-name" id="pdf-name">—</div>
+                <div class="file-preview-meta" id="pdf-meta">—</div>
+              </div>
+              <button class="file-preview-clear" onclick="clearFile('pdf')" title="Remove">✕</button>
+            </div>
+            <div class="desc-field">
+              <label>Hints for extraction (optional)</label>
+              <textarea id="hint-pdf" placeholder="e.g. 'This is a system architecture PDF, focus on service names and their data flows'"></textarea>
+            </div>
+          </div>
+
+          <!-- CSV pane -->
+          <div class="input-pane" id="pane-csv">
+            <div class="drop-zone" id="dz-csv">
+              <input type="file" accept=".csv,.tsv,text/csv" id="file-csv" onchange="handleFileSelect('csv')">
+              <span class="dz-icon">📊</span>
+              <div class="dz-title">Drop your CSV / TSV here</div>
+              <div class="dz-sub">or click to browse</div>
+              <div class="dz-accept">Accepts .csv · .tsv · plain text</div>
+            </div>
+            <div class="file-preview" id="preview-csv">
+              <span class="file-preview-icon">📊</span>
+              <div class="file-preview-info">
+                <div class="file-preview-name" id="csv-name">—</div>
+                <div class="file-preview-meta" id="csv-meta">—</div>
+              </div>
+              <button class="file-preview-clear" onclick="clearFile('csv')" title="Remove">✕</button>
+            </div>
+            <div class="csv-table-wrap" id="csv-table-wrap"></div>
+            <div class="desc-field">
+              <label>Describe the columns (optional)</label>
+              <textarea id="hint-csv" placeholder="e.g. 'Column A is source, Column B is destination, Column C is relationship type'"></textarea>
+            </div>
+          </div>
+
+          <!-- Image pane -->
+          <div class="input-pane" id="pane-image">
+            <div class="drop-zone" id="dz-image">
+              <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" id="file-image" onchange="handleFileSelect('image')">
+              <span class="dz-icon">🖼</span>
+              <div class="dz-title">Drop screenshot or diagram</div>
+              <div class="dz-sub">Miro screenshots, whiteboard photos, any diagram image</div>
+              <div class="dz-accept">PNG · JPG · WebP · GIF — up to 20 MB</div>
+            </div>
+            <div class="file-preview" id="preview-image">
+              <span class="file-preview-icon">🖼</span>
+              <div class="file-preview-info">
+                <div class="file-preview-name" id="image-name">—</div>
+                <div class="file-preview-meta" id="image-meta">—</div>
+              </div>
+              <button class="file-preview-clear" onclick="clearFile('image')" title="Remove">✕</button>
+            </div>
+            <img class="img-thumb" id="img-preview" src="" alt="Preview">
+            <div class="desc-field">
+              <label>Additional context (optional)</label>
+              <textarea id="hint-image" placeholder="e.g. 'This is a Miro board showing a microservices architecture with 3 layers'"></textarea>
+            </div>
+          </div>
+
+          <!-- Miro Embed pane -->
+          <div class="input-pane" id="pane-miro">
+            <div class="miro-field">
+              <label>Miro Board Public Embed URL or iframe code</label>
+              <input id="miro-url" type="text" placeholder="https://miro.com/app/live-embed/... or paste full &lt;iframe&gt; code">
+            </div>
+            <div class="miro-field">
+              <label>Board Description / Content</label>
+              <textarea id="miro-desc" style="min-height:120px" placeholder="Describe your Miro board content in detail — list all the shapes, connectors, labels, layers, and how they relate.&#10;&#10;Example:&#10;- Box 'React App' connects to box 'API Gateway' with label 'HTTP'&#10;- 'API Gateway' connects to 'Auth Service' and 'User Service'&#10;- 'Auth Service' connects to 'PostgreSQL' database&#10;- All services are grouped inside frame 'Backend'"></textarea>
+            </div>
+            <iframe class="miro-embed-preview" id="miro-iframe" src="" allow="fullscreen; clipboard-read; clipboard-write" frameborder="0"></iframe>
+            <div class="desc-field" style="margin-top:0">
+              <label>Diagram focus / hints (optional)</label>
+              <textarea id="hint-miro" placeholder="e.g. 'Generate a sequence diagram focusing on the authentication flow'"></textarea>
+            </div>
+          </div>
+
+        </div><!-- /card-body -->
+      </div><!-- /card -->
+
+      <!-- ─── Output options ──────────────────────────────────── -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-head">
+          <div class="card-dot" style="background:var(--amber)"></div>
+          <span class="card-head-title">Output Formats</span>
+        </div>
+        <div class="card-body">
+
+          <div class="section-label">Select formats to generate</div>
+          <div class="format-grid">
+            <div class="fmt-opt on" data-fmt="mermaid-flow" onclick="toggleFmt(this)">
+              <div class="fmt-check"></div>
+              <div class="fmt-info">
+                <div class="fmt-name">Mermaid Flow</div>
+                <div class="fmt-desc">flowchart TD/LR</div>
+              </div>
+            </div>
+            <div class="fmt-opt on" data-fmt="mermaid-seq" onclick="toggleFmt(this)">
+              <div class="fmt-check"></div>
+              <div class="fmt-info">
+                <div class="fmt-name">Sequence Diagram</div>
+                <div class="fmt-desc">sequenceDiagram</div>
+              </div>
+            </div>
+            <div class="fmt-opt on" data-fmt="drawio" onclick="toggleFmt(this)">
+              <div class="fmt-check"></div>
+              <div class="fmt-info">
+                <div class="fmt-name">Draw.io XML</div>
+                <div class="fmt-desc">.drawio / .xml</div>
+              </div>
+            </div>
+            <div class="fmt-opt on" data-fmt="arch" onclick="toggleFmt(this)">
+              <div class="fmt-check"></div>
+              <div class="fmt-info">
+                <div class="fmt-name">Architecture</div>
+                <div class="fmt-desc">layered subgraphs</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="section-sep"></div>
+
+          <div class="section-label">Diagram direction (Mermaid)</div>
+          <div class="dir-row">
+            <button class="dir-btn on" data-dir="TD" onclick="setDir(this)">TD ↓</button>
+            <button class="dir-btn" data-dir="LR" onclick="setDir(this)">LR →</button>
+            <button class="dir-btn" data-dir="BT" onclick="setDir(this)">BT ↑</button>
+            <button class="dir-btn" data-dir="RL" onclick="setDir(this)">RL ←</button>
+          </div>
+
+          <div class="section-sep"></div>
+
+          <button class="generate-btn" id="genBtn" onclick="generate()">
+            <span id="genBtnIcon">⟁</span>
+            <span id="genBtnText">FORGE DIAGRAMS</span>
+          </button>
+
+          <div class="status-row hidden" id="statusRow">
+            <span id="statusIcon"></span>
+            <span id="statusText"></span>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /left col -->
+
+    <!-- ─── RIGHT: OUTPUT PANEL ──────────────────────────────── -->
+    <div class="output-area" id="outputArea">
+      <div class="empty-state" id="emptyState">
+        <span class="empty-glyph">⟁</span>
+        <div class="empty-title">AWAITING INPUT</div>
+        <div class="empty-sub">
+          Upload a PDF, CSV, or image — or describe your Miro board.<br>
+          Your generated diagrams will render here, ready to copy<br>
+          or drop straight into any <code>.md</code> file.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+
+  <footer class="footer">
+    <span>DIAGRAMFORGE · v2.0 · Standalone · No server required</span>
+    <span>Powered by <a href="https://anthropic.com" target="_blank">Claude claude-sonnet-4-20250514</a> · Outputs: Mermaid · Draw.io · Architecture</span>
+  </footer>
+
+</div><!-- /app -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+const state = {
+  tab: 'pdf',
+  dir: 'TD',
+  files: { pdf: null, csv: null, image: null },
+  csvText: '',
+  imageB64: '',
+  imageType: '',
+  pdfB64: '',
+};
+
+const codeStore = {};
+
+/* ═══════════════════════════════════════════════════════════════
+   TAB SWITCHING
+═══════════════════════════════════════════════════════════════ */
+function switchTab(t) {
+  state.tab = t;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  document.querySelectorAll('.input-pane').forEach(p => p.classList.toggle('active', p.id === 'pane-' + t));
+
+  // Load miro iframe if URL present
+  if (t === 'miro') tryMiroEmbed();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MIRO EMBED PREVIEW
+═══════════════════════════════════════════════════════════════ */
+document.getElementById('miro-url').addEventListener('input', tryMiroEmbed);
+function tryMiroEmbed() {
+  const raw = document.getElementById('miro-url').value.trim();
+  if (!raw) return;
+  let src = '';
+  const iframeMatch = raw.match(/src="([^"]+)"/);
+  if (iframeMatch) src = iframeMatch[1];
+  else if (raw.startsWith('http')) src = raw;
+  const frame = document.getElementById('miro-iframe');
+  if (src) { frame.src = src; frame.classList.add('show'); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FILE HANDLING
+═══════════════════════════════════════════════════════════════ */
+function handleFileSelect(type) {
+  const input = document.getElementById('file-' + type);
+  const file = input.files[0];
+  if (!file) return;
+  state.files[type] = file;
+
+  if (type === 'pdf') loadPdf(file);
+  if (type === 'csv') loadCsv(file);
+  if (type === 'image') loadImage(file);
+}
+
+function loadPdf(file) {
+  document.getElementById('pdf-name').textContent = file.name;
+  document.getElementById('pdf-meta').textContent = `${(file.size / 1024).toFixed(0)} KB · PDF Document`;
+  document.getElementById('preview-pdf').classList.add('show');
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.pdfB64 = e.target.result.split(',')[1];
+  };
+  reader.readAsDataURL(file);
+}
+
+function loadCsv(file) {
+  document.getElementById('csv-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.csvText = e.target.result;
+    const rows = state.csvText.trim().split('\n').map(r => r.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+    document.getElementById('csv-meta').textContent = `${rows.length - 1} rows · ${rows[0]?.length || 0} columns`;
+    document.getElementById('preview-csv').classList.add('show');
+    renderCsvPreview(rows);
+  };
+  reader.readAsText(file);
+}
+
+function renderCsvPreview(rows) {
+  const wrap = document.getElementById('csv-table-wrap');
+  const headers = rows[0] || [];
+  const body = rows.slice(1, 8);
+  wrap.innerHTML = `<table class="csv-table">
+    <thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
+    <tbody>${body.map(row => `<tr>${headers.map((_, i) => `<td>${esc(row[i] || '')}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+  wrap.classList.add('show');
+}
+
+function loadImage(file) {
+  document.getElementById('image-name').textContent = file.name;
+  document.getElementById('image-meta').textContent = `${(file.size / 1024).toFixed(0)} KB · ${file.type}`;
+  document.getElementById('preview-image').classList.add('show');
+  state.imageType = file.type;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.imageB64 = e.target.result.split(',')[1];
+    const thumb = document.getElementById('img-preview');
+    thumb.src = e.target.result;
+    thumb.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearFile(type) {
+  state.files[type] = null;
+  document.getElementById('file-' + type).value = '';
+  document.getElementById('preview-' + type).classList.remove('show');
+
+  if (type === 'pdf') { state.pdfB64 = ''; }
+  if (type === 'csv') { state.csvText = ''; document.getElementById('csv-table-wrap').classList.remove('show'); }
+  if (type === 'image') {
+    state.imageB64 = '';
+    const thumb = document.getElementById('img-preview');
+    thumb.src = ''; thumb.classList.remove('show');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FORMAT / DIRECTION TOGGLES
+═══════════════════════════════════════════════════════════════ */
+function toggleFmt(el) { el.classList.toggle('on'); }
+function setDir(el) {
+  document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  state.dir = el.dataset.dir;
+}
+function toggleKey() {
+  const inp = document.getElementById('apiKey');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS
+═══════════════════════════════════════════════════════════════ */
+function setStatus(type, msg) {
+  const row = document.getElementById('statusRow');
+  const icon = document.getElementById('statusIcon');
+  const text = document.getElementById('statusText');
+  row.className = 'status-row ' + type;
+  text.textContent = msg;
+  icon.innerHTML = type === 'loading' ? '<div class="spinner"></div>' : type === 'ok' ? '✓' : '✕';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PROMPT BUILDING
+═══════════════════════════════════════════════════════════════ */
+const SYSTEM_PROMPT = `You are an expert diagram architect. Your task is to analyze the provided input (PDF, CSV data, image, or board description) and extract a structured graph of nodes, edges, and groups.
+
+You MUST respond ONLY with a valid JSON object — no markdown fences, no prose, no explanation. The JSON schema is:
+
+{
+  "title": "string — short descriptive title",
+  "description": "string — one sentence summary",
+  "nodes": [
+    {"id": "string (safe id, no spaces)", "label": "string", "type": "service|datastore|external|process|ui|queue|frame|actor|default", "group": "string or null"}
+  ],
+  "edges": [
+    {"from": "node_id", "to": "node_id", "label": "string or null", "style": "solid|dashed|dotted"}
+  ],
+  "groups": [
+    {"id": "string", "label": "string", "nodeIds": ["node_id", ...]}
+  ],
+  "actors": [
+    {"id": "string", "label": "string"}
+  ],
+  "messages": [
+    {"from": "actor_id", "to": "actor_id", "label": "string", "type": "sync|async|return", "note": "string or null"}
+  ]
+}
+
+Rules:
+- Every node id must be alphanumeric and underscores only (e.g. "react_app", "api_gw")
+- Extract 5–30 meaningful nodes. Avoid duplicates.
+- Edges should capture all meaningful relationships
+- For sequence diagrams: populate actors and messages from the data flow
+- Groups = logical layers or frames (e.g. "Frontend", "Backend", "Data Layer")
+- Return ONLY the JSON. No other text whatsoever.`;
+
+function buildMessages() {
+  const tab = state.tab;
+  const msgs = [];
+
+  if (tab === 'pdf') {
+    const hint = document.getElementById('hint-pdf').value.trim();
+    const content = [{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: state.pdfB64 } }];
+    if (hint) content.push({ type: 'text', text: `Additional context: ${hint}` });
+    content.push({ type: 'text', text: 'Extract the diagram structure from this PDF.' });
+    msgs.push({ role: 'user', content });
+
+  } else if (tab === 'csv') {
+    const hint = document.getElementById('hint-csv').value.trim();
+    let text = `Analyze this CSV data and extract a diagram graph from it:\n\n${state.csvText.substring(0, 12000)}`;
+    if (hint) text += `\n\nColumn guidance: ${hint}`;
+    msgs.push({ role: 'user', content: text });
+
+  } else if (tab === 'image') {
+    const hint = document.getElementById('hint-image').value.trim();
+    const content = [
+      { type: 'image', source: { type: 'base64', media_type: state.imageType || 'image/png', data: state.imageB64 } },
+      { type: 'text', text: `Analyze this diagram image and extract all visible nodes, connections, labels, and groups.${hint ? ' Context: ' + hint : ''}` }
+    ];
+    msgs.push({ role: 'user', content });
+
+  } else if (tab === 'miro') {
+    const desc = document.getElementById('miro-desc').value.trim();
+    const hint = document.getElementById('hint-miro').value.trim();
+    let text = `Analyze this Miro board description and extract the diagram structure:\n\n${desc}`;
+    if (hint) text += `\n\nFocus: ${hint}`;
+    msgs.push({ role: 'user', content: text });
+  }
+
+  return msgs;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VALIDATE INPUT
+═══════════════════════════════════════════════════════════════ */
+function validateInput() {
+  const tab = state.tab;
+  if (tab === 'pdf' && !state.pdfB64) return 'Please upload a PDF file.';
+  if (tab === 'csv' && !state.csvText) return 'Please upload a CSV file.';
+  if (tab === 'image' && !state.imageB64) return 'Please upload an image.';
+  if (tab === 'miro' && !document.getElementById('miro-desc').value.trim() && !document.getElementById('miro-url').value.trim())
+    return 'Please enter a Miro embed URL or board description.';
+  const fmts = [...document.querySelectorAll('.fmt-opt.on')].map(e => e.dataset.fmt);
+  if (!fmts.length) return 'Select at least one output format.';
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CLAUDE API CALL
+═══════════════════════════════════════════════════════════════ */
+async function callClaude(messages) {
+  const key = document.getElementById('apiKey').value.trim();
+  const headers = { 'Content-Type': 'application/json', 'anthropic-dangerous-direct-browser-calls': 'true' };
+  if (key) headers['x-api-key'] = key;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      system: SYSTEM_PROMPT,
+      messages
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `API error ${res.status}`);
+  }
+
+  const data = await res.json();
+  const rawText = data.content.map(b => b.text || '').join('');
+  const clean = rawText.replace(/```json\s*|```\s*/g, '').trim();
+
+  try { return JSON.parse(clean); }
+  catch { throw new Error('Model returned invalid JSON. Try again.'); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DIAGRAM GENERATORS
+═══════════════════════════════════════════════════════════════ */
+function toMermaidFlow(graph, dir) {
+  const lines = [`flowchart ${dir}`];
+  const placed = new Set();
+
+  // Groups as subgraphs
+  for (const g of (graph.groups || [])) {
+    const gid = safeId(g.id);
+    lines.push(`  subgraph ${gid}["${esc2(g.label)}"]`);
+    for (const nid of (g.nodeIds || [])) {
+      const node = graph.nodes.find(n => n.id === nid);
+      if (!node) continue;
+      placed.add(node.id);
+      lines.push('    ' + nodeShape(node));
+    }
+    lines.push('  end');
+  }
+
+  // Ungrouped nodes
+  for (const node of (graph.nodes || [])) {
+    if (!placed.has(node.id)) lines.push('  ' + nodeShape(node));
+  }
+
+  // Edges
+  for (const e of (graph.edges || [])) {
+    const arrow = e.style === 'dashed' ? '-.->' : e.style === 'dotted' ? '-..->' : '-->';
+    const lbl = e.label ? `|"${esc2(e.label)}"| ` : '';
+    lines.push(`  ${safeId(e.from)} ${arrow} ${lbl}${safeId(e.to)}`);
+  }
+
+  return lines.join('\n');
+}
+
+function nodeShape(node) {
+  const id = safeId(node.id), lbl = esc2(node.label);
+  switch (node.type) {
+    case 'datastore': return `${id}[("${lbl}")]`;
+    case 'external':  return `${id}(["${lbl}"])`;
+    case 'queue':     return `${id}{{{"${lbl}"}}}`;
+    case 'ui':        return `${id}["🖥 ${lbl}"]`;
+    case 'actor':     return `${id}(("${lbl}"))`;
+    default:          return `${id}["${lbl}"]`;
+  }
+}
+
+function toMermaidSeq(graph) {
+  const lines = ['sequenceDiagram', '  autonumber'];
+  const actors = graph.actors?.length ? graph.actors : deriveActors(graph);
+
+  for (const a of actors) {
+    lines.push(`  participant ${safeId(a.id)} as ${esc2(a.label)}`);
+  }
+
+  const messages = graph.messages?.length ? graph.messages : deriveMessages(graph, actors);
+  for (const m of messages) {
+    const from = safeId(m.from), to = safeId(m.to);
+    const lbl = esc2(m.label || 'request');
+    if (m.type === 'return') lines.push(`  ${from}-->>-${to}: ${lbl}`);
+    else if (m.type === 'async') lines.push(`  ${from}-)${to}: ${lbl}`);
+    else lines.push(`  ${from}->>+${to}: ${lbl}`);
+    if (m.note) lines.push(`  Note over ${to}: ${esc2(m.note)}`);
+  }
+
+  return lines.join('\n');
+}
+
+function deriveActors(graph) {
+  return (graph.nodes || []).slice(0, 8).map(n => ({ id: n.id, label: n.label }));
+}
+
+function deriveMessages(graph, actors) {
+  const msgs = [];
+  const actorIds = new Set(actors.map(a => a.id));
+  for (const e of (graph.edges || []).slice(0, 16)) {
+    if (actorIds.has(e.from) && actorIds.has(e.to)) {
+      msgs.push({ from: e.from, to: e.to, label: e.label || 'request', type: 'sync' });
+    }
+  }
+  return msgs;
+}
+
+function toArchDiagram(graph, dir) {
+  const lines = [`flowchart ${dir}`];
+  lines.push('  %% ── Architecture Diagram ──────────────────────────');
+  lines.push('  classDef svc   fill:#0f1923,stroke:#00b4ff,color:#dde4ef,stroke-width:2px');
+  lines.push('  classDef db    fill:#0f1923,stroke:#34d399,color:#dde4ef,stroke-width:2px');
+  lines.push('  classDef ext   fill:#0f1923,stroke:#ffb340,color:#dde4ef,stroke-width:2px,stroke-dasharray:5 5');
+  lines.push('  classDef ui    fill:#0f1923,stroke:#a78bfa,color:#dde4ef,stroke-width:2px');
+  lines.push('  classDef queue fill:#0f1923,stroke:#f472b6,color:#dde4ef,stroke-width:2px');
+  lines.push('');
+
+  const styleLines = [];
+  const placed = new Set();
+
+  for (const g of (graph.groups || [])) {
+    const gid = safeId(g.id);
+    lines.push(`  subgraph ${gid}["▸ ${esc2(g.label)}"]`);
+    lines.push(`    direction ${dir === 'LR' ? 'TB' : 'LR'}`);
+    for (const nid of (g.nodeIds || [])) {
+      const node = graph.nodes.find(n => n.id === nid);
+      if (!node) continue;
+      placed.add(node.id);
+      lines.push('    ' + nodeShape(node));
+      styleLines.push(`  class ${safeId(node.id)} ${nodeClass(node.type)}`);
+    }
+    lines.push('  end');
+  }
+
+  for (const node of (graph.nodes || [])) {
+    if (!placed.has(node.id)) {
+      lines.push('  ' + nodeShape(node));
+      styleLines.push(`  class ${safeId(node.id)} ${nodeClass(node.type)}`);
+    }
+  }
+
+  lines.push('');
+  for (const e of (graph.edges || [])) {
+    const arrow = e.style === 'dashed' ? '-.->|' : e.style === 'dotted' ? '-..->|' : '==>|';
+    const lbl = e.label ? esc2(e.label) : '';
+    lines.push(`  ${safeId(e.from)} ${arrow}"${lbl}"| ${safeId(e.to)}`);
+  }
+
+  lines.push('');
+  lines.push(...styleLines);
+  return lines.join('\n');
+}
+
+function nodeClass(type) {
+  const m = { datastore: 'db', external: 'ext', ui: 'ui', queue: 'queue' };
+  return m[type] || 'svc';
+}
+
+function toDrawioXml(graph) {
+  let nextId = 2;
+  const cells = [];
+  const nodeIdMap = new Map(); // original id -> drawio int id
+
+  const STYLES = {
+    service:   'rounded=1;whiteSpace=wrap;html=1;fillColor=#0d1b2a;strokeColor=#00b4ff;fontColor=#dde4ef;arcSize=8;fontStyle=1;',
+    datastore: 'shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#0d1b2a;strokeColor=#34d399;fontColor=#dde4ef;',
+    external:  'ellipse;whiteSpace=wrap;html=1;fillColor=#0d1b2a;strokeColor=#ffb340;fontColor=#dde4ef;dashed=1;',
+    queue:     'shape=mxgraph.flowchart.queue;whiteSpace=wrap;html=1;fillColor=#0d1b2a;strokeColor=#f472b6;fontColor=#dde4ef;',
+    ui:        'rounded=1;whiteSpace=wrap;html=1;fillColor=#1a0d2a;strokeColor=#a78bfa;fontColor=#dde4ef;arcSize=8;',
+    actor:     'shape=mxgraph.basic.person;whiteSpace=wrap;html=1;fillColor=#1a2a1a;strokeColor=#34d399;fontColor=#dde4ef;',
+    default:   'rounded=1;whiteSpace=wrap;html=1;fillColor=#0d1b2a;strokeColor=#2c3649;fontColor=#dde4ef;arcSize=8;',
+    edge:      'rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#60a5fa;fontColor=#dde4ef;exitX=0.5;exitY=1;exitDx=0;exitDy=-1;entryX=0.5;entryY=0;entryDx=0;entryDy=-1;',
+    group:     'swimlane;startSize=30;fillColor=#0b0d11;strokeColor=#2c3649;fontColor=#7a8899;fontStyle=1;',
+  };
+
+  // Groups
+  const groupMap = new Map();
+  let gx = 40;
+  for (const g of (graph.groups || [])) {
+    const cid = nextId++;
+    groupMap.set(g.id, cid);
+    const w = 260, h = Math.max(180, (g.nodeIds?.length || 0) * 90 + 50);
+    cells.push(`    <mxCell id="${cid}" value="${escXml(g.label)}" style="${STYLES.group}" vertex="1" parent="1">
+      <mxGeometry x="${gx}" y="40" width="${w}" height="${h}" as="geometry" />
+    </mxCell>`);
+    gx += w + 40;
+  }
+
+  // Nodes
+  let col = 0, row = 0;
+  for (const node of (graph.nodes || [])) {
+    const cid = nextId++;
+    nodeIdMap.set(node.id, cid);
+    const style = STYLES[node.type] || STYLES.default;
+    const parentGroup = (graph.groups || []).find(g => g.nodeIds?.includes(node.id));
+    const parentId = parentGroup ? groupMap.get(parentGroup.id) : 1;
+    const x = parentGroup ? 20 + (col % 2) * 130 : 40 + (col % 4) * 200;
+    const y = parentGroup ? 40 + row * 80 : 40 + Math.floor(col / 4) * 100;
+    if (parentGroup) { col++; row = (Math.floor(col / 2)); }
+    else col++;
+    cells.push(`    <mxCell id="${cid}" value="${escXml(node.label)}" style="${style}" vertex="1" parent="${parentId}">
+      <mxGeometry x="${x}" y="${y}" width="140" height="56" as="geometry" />
+    </mxCell>`);
+  }
+
+  // Edges
+  for (const e of (graph.edges || [])) {
+    const cid = nextId++;
+    const src = nodeIdMap.get(e.from);
+    const tgt = nodeIdMap.get(e.to);
+    if (!src || !tgt) continue;
+    const dashed = e.style === 'dashed' ? 'dashed=1;' : '';
+    cells.push(`    <mxCell id="${cid}" value="${escXml(e.label || '')}" style="${STYLES.edge}${dashed}" edge="1" source="${src}" target="${tgt}" parent="1">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>`);
+  }
+
+  return `<mxfile host="DiagramForge" modified="${new Date().toISOString()}" version="21.0">
+  <diagram name="${escXml(graph.title || 'Diagram')}" id="main">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0" background="#0b0d11">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+${cells.join('\n')}
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════════ */
+function safeId(s) { return String(s).replace(/[^a-zA-Z0-9_]/g, '_'); }
+function esc2(s)   { return String(s || '').replace(/"/g, "'").replace(/\n/g, ' ').substring(0, 60); }
+function esc(s)    { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escXml(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ═══════════════════════════════════════════════════════════════
+   SYNTAX HIGHLIGHT
+═══════════════════════════════════════════════════════════════ */
+function highlightMermaid(code) {
+  return esc(code)
+    .replace(/(flowchart|sequenceDiagram|graph|subgraph|end|autonumber|participant|box|Note\s+over|Note\s+right|classDef|direction|class\b)(\s|$)/g,
+      '<span class="kw">$1</span>$2')
+    .replace(/("([^"]*)")/g, '<span class="str">$1</span>')
+    .replace(/(==>|--&gt;|-\.-&gt;|-\.\.->)/g, '<span class="arr">$1</span>')
+    .replace(/(-&gt;&gt;|\-\-&gt;&gt;|\-&gt;)/g, '<span class="arr">$1</span>')
+    .replace(/%%.*$/gm, '<span class="cmt">$&</span>');
+}
+
+function highlightXml(code) {
+  return esc(code)
+    .replace(/(&lt;\/?)([\w]+)/g, '<span class="xt">&lt;$2</span>')
+    .replace(/\/?&gt;/g, '<span class="xt">$&</span>')
+    .replace(/([\w:]+)=/g, '<span class="xa">$1</span>=')
+    .replace(/"([^"]*)"/g, '<span class="xv">"$1"</span>');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER OUTPUT
+═══════════════════════════════════════════════════════════════ */
+const FMT_CONFIG = {
+  'mermaid-flow': {
+    title: 'Mermaid Flowchart',
+    icon: '⬡', iconBg: 'rgba(0,180,255,.12)', iconColor: '#00b4ff',
+    badgeBg: 'rgba(0,180,255,.1)', badgeColor: '#00b4ff', badge: 'flowchart',
+    embed: '```mermaid\n[paste code here]\n```',
+    ext: 'md', hl: highlightMermaid,
+  },
+  'mermaid-seq': {
+    title: 'Sequence Diagram',
+    icon: '⇄', iconBg: 'rgba(52,211,153,.12)', iconColor: '#34d399',
+    badgeBg: 'rgba(52,211,153,.1)', badgeColor: '#34d399', badge: 'sequenceDiagram',
+    embed: '```mermaid\n[paste code here]\n```',
+    ext: 'md', hl: highlightMermaid,
+  },
+  'drawio': {
+    title: 'Draw.io XML',
+    icon: '◫', iconBg: 'rgba(255,179,64,.12)', iconColor: '#ffb340',
+    badgeBg: 'rgba(255,179,64,.1)', badgeColor: '#ffb340', badge: '.drawio',
+    embed: 'File → Import → From Device → upload .drawio file',
+    ext: 'drawio', hl: highlightXml,
+  },
+  'arch': {
+    title: 'Architecture Flow',
+    icon: '⬟', iconBg: 'rgba(167,139,250,.12)', iconColor: '#a78bfa',
+    badgeBg: 'rgba(167,139,250,.1)', badgeColor: '#a78bfa', badge: 'architecture',
+    embed: '```mermaid\n[paste code here]\n```',
+    ext: 'md', hl: highlightMermaid,
+  },
+};
+
+function renderOutput(results, graph) {
+  const area = document.getElementById('outputArea');
+  area.innerHTML = '';
+  document.getElementById('emptyState')?.remove();
+
+  // Stats banner
+  const stats = document.createElement('div');
+  stats.className = 'card';
+  stats.style.cssText = 'border-color:var(--line2)';
+  stats.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:0;border-bottom:1px solid var(--line)">
+      ${[
+        ['⬡', graph.nodes?.length || 0, 'nodes'],
+        ['→', graph.edges?.length || 0, 'edges'],
+        ['▣', graph.groups?.length || 0, 'groups'],
+        ['⇄', graph.actors?.length || 0, 'actors'],
+        ['✦', results.length, 'formats'],
+      ].map(([ico, n, lbl]) => `
+        <div style="flex:1;min-width:100px;padding:14px 18px;border-right:1px solid var(--line);text-align:center">
+          <div style="font-family:var(--display);font-size:26px;color:var(--blue);letter-spacing:1px">${n}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px">${ico} ${lbl}</div>
+        </div>`).join('')}
+    </div>
+    <div style="padding:10px 18px;font-family:var(--mono);font-size:11px;color:var(--text2)">
+      <strong style="color:var(--text)">${escHtml(graph.title || 'Untitled')}</strong>
+      <span style="color:var(--text3);margin-left:8px">— ${escHtml(graph.description || '')}</span>
+    </div>`;
+  area.appendChild(stats);
+
+  for (const { fmt, code } of results) {
+    const cfg = FMT_CONFIG[fmt];
+    if (!cfg) continue;
+
+    const card = document.createElement('div');
+    card.className = 'out-card';
+    card.innerHTML = `
+      <div class="out-card-head">
+        <div class="out-card-meta">
+          <div class="out-card-chip" style="background:${cfg.iconBg};color:${cfg.iconColor}">${cfg.icon}</div>
+          <span class="out-card-title">${cfg.title}</span>
+          <span class="out-card-badge" style="background:${cfg.badgeBg};color:${cfg.badgeColor}">${cfg.badge}</span>
+        </div>
+        <div class="out-card-actions">
+          <button class="btn btn-copy" id="copy-${fmt}" onclick="copyCode('${fmt}')">⎘ Copy</button>
+          <button class="btn btn-dl" onclick="downloadCode('${fmt}', '${cfg.ext}')">⬇ .${cfg.ext}</button>
+        </div>
+      </div>
+      <div class="code-wrap"><pre>${cfg.hl(code)}</pre></div>
+      <div class="embed-strip">
+        <span class="embed-strip-label">Embed</span>
+        <span class="embed-strip-code">${escHtml(cfg.embed)}</span>
+      </div>`;
+    area.appendChild(card);
+  }
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ═══════════════════════════════════════════════════════════════
+   COPY / DOWNLOAD
+═══════════════════════════════════════════════════════════════ */
+function copyCode(fmt) {
+  const code = codeStore[fmt];
+  if (!code) return;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('copy-' + fmt);
+    if (!btn) return;
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('done');
+    setTimeout(() => { btn.textContent = '⎘ Copy'; btn.classList.remove('done'); }, 2200);
+  });
+}
+
+function downloadCode(fmt, ext) {
+  const code = codeStore[fmt];
+  if (!code) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([code], { type: 'text/plain' }));
+  a.download = `diagram-${fmt}.${ext}`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DRAG & DROP
+═══════════════════════════════════════════════════════════════ */
+['pdf','csv','image'].forEach(type => {
+  const dz = document.getElementById('dz-' + type);
+  if (!dz) return;
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const inp = document.getElementById('file-' + type);
+    const dt = new DataTransfer(); dt.items.add(file);
+    inp.files = dt.files;
+    handleFileSelect(type);
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN GENERATE
+═══════════════════════════════════════════════════════════════ */
+async function generate() {
+  const err = validateInput();
+  if (err) { setStatus('err', err); return; }
+
+  const fmts = [...document.querySelectorAll('.fmt-opt.on')].map(e => e.dataset.fmt);
+  const btn = document.getElementById('genBtn');
+  const btnText = document.getElementById('genBtnText');
+  btn.disabled = true;
+  btnText.textContent = 'ANALYZING…';
+  setStatus('loading', 'Sending to Claude claude-sonnet-4-20250514 for analysis…');
+
+  try {
+    const messages = buildMessages();
+    setStatus('loading', 'Extracting graph structure from your content…');
+    const graph = await callClaude(messages);
+
+    setStatus('loading', `Building ${fmts.length} diagram formats…`);
+    const results = [];
+    for (const fmt of fmts) {
+      let code = '';
+      if (fmt === 'mermaid-flow') code = toMermaidFlow(graph, state.dir);
+      else if (fmt === 'mermaid-seq') code = toMermaidSeq(graph);
+      else if (fmt === 'drawio') code = toDrawioXml(graph);
+      else if (fmt === 'arch') code = toArchDiagram(graph, state.dir);
+      codeStore[fmt] = code;
+      results.push({ fmt, code });
+    }
+
+    renderOutput(results, graph);
+    setStatus('ok', `Done — ${graph.nodes?.length || 0} nodes · ${graph.edges?.length || 0} edges → ${fmts.length} formats generated`);
+    document.getElementById('outputArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (e) {
+    setStatus('err', e.message || 'Unknown error');
+    console.error(e);
+  } finally {
+    btn.disabled = false;
+    btnText.textContent = 'FORGE DIAGRAMS';
+  }
+}
+</script>
+</body>
+</html>
